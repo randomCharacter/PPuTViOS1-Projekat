@@ -71,4 +71,6 @@ StreamControllerError channelDown();
  */
 StreamControllerError getChannelInfo(ChannelInfo* channelInfo);
 
+StreamControllerError SetChannel(int32_t channelNumber);
+
 #endif /* __STREAM_CONTROLLER_H__ */

@@ -73,6 +73,7 @@ int main(int argc, char **argv)
 
 void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 {
+    printf("Code: %d\n", code);
     switch(code)
 	{
 		case KEYCODE_INFO:
@@ -99,6 +100,36 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
             pthread_mutex_lock(&deinitMutex);
 		    pthread_cond_signal(&deinitCond);
 		    pthread_mutex_unlock(&deinitMutex);
+			break;
+        case KEYCODE_0:
+            SetChannel(0);
+			break;
+        case KEYCODE_1:
+            SetChannel(1);
+			break;
+        case KEYCODE_2:
+            SetChannel(2);
+			break;
+        case KEYCODE_3:
+            SetChannel(3);
+			break;
+        case KEYCODE_4:
+            SetChannel(4);
+			break;
+        case KEYCODE_5:
+            SetChannel(5);
+			break;
+        case KEYCODE_6:
+            SetChannel(6);
+			break;
+        case KEYCODE_7:
+            SetChannel(7);
+			break;
+        case KEYCODE_8:
+            SetChannel(8);
+			break;
+        case KEYCODE_9:
+            SetChannel(9);
 			break;
 		default:
 			printf("\nPress P+, P-, info or exit! \n\n");

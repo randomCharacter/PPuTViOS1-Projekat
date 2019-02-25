@@ -112,6 +112,17 @@ StreamControllerError channelUp()
 	return SC_NO_ERROR;
 }
 
+StreamControllerError SetChannel(int32_t channelNumber)
+{
+	if (channelNumber  < patTable->serviceInfoCount - 1 && channelNumber > 1) {
+		programNumber = channelNumber - 1;
+		/* set flag to start current channel */
+		changeChannel = true;
+	}
+
+	return SC_NO_ERROR;
+}
+
 StreamControllerError channelDown()
 {
 	if (programNumber <= 0)
