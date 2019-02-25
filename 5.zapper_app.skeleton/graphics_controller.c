@@ -145,13 +145,14 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
     /* update screen */
     DFBCHECK(primary->Flip(primary, NULL, 0));
 
+    DFBCHECK(fontInterface->Release(fontInterface));
 
     /* set the timer for clearing the screen */
     //DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x40, 0x00));
     memset(&timerSpec,0,sizeof(timerSpec));
 
     /* specify the timer timeout time */
-    timerSpec.it_value.tv_sec = 10;
+    timerSpec.it_value.tv_sec = 3;
     timerSpec.it_value.tv_nsec = 0;
 
     /* set the new timer specs */
