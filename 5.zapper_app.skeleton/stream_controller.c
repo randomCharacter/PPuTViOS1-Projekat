@@ -106,7 +106,7 @@ StreamControllerError channelUp()
 		programNumber++;
 	}
 
-	drawChannelNumber(programNumber);
+	drawChannelNumber(programNumber + 1);
 
 	/* set flag to start current channel */
 	changeChannel = true;
@@ -125,7 +125,7 @@ StreamControllerError channelDown()
 		programNumber--;
 	}
 
-	drawChannelNumber(programNumber);
+	drawChannelNumber(programNumber + 1);
 
 	/* set flag to start current channel */
 	changeChannel = true;
