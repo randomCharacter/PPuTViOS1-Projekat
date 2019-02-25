@@ -24,7 +24,7 @@ static void wipeScreen() {
     } else {
         DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
     }
-    DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
+    DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
 
     /* update screen */
     DFBCHECK(primary->Flip(primary, NULL, 0));
@@ -37,7 +37,7 @@ static void wipeScreen() {
     }
 }
 
-void radioScreen() {
+void radioScreen(int32_t channel_no) {
     int32_t ret;
 
     /* clear screen */
@@ -46,11 +46,11 @@ void radioScreen() {
 
     /* update screen */
     DFBCHECK(primary->Flip(primary, NULL, 0));
-
+    drawChannelNumber(channel_no);
     radio = 1;
 }
 
-void videoScreen() {
+void videoScreen(int32_t channel_no) {
     int32_t ret;
 
     /* clear screen */
@@ -59,7 +59,7 @@ void videoScreen() {
 
     /* update screen */
     DFBCHECK(primary->Flip(primary, NULL, 0));
-
+    drawChannelNumber(channel_no);
 
     radio = 0;
 }
@@ -112,11 +112,18 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
     char keycodeString[4];
 
     /*  draw the frame */
-    DFBCHECK(primary->SetColor(primary, 0x40, 0x10, 0x80, 0xff));
-    DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
-
-    DFBCHECK(primary->SetColor(primary, 0x80, 0x40, 0x10, 0xff));
-    DFBCHECK(primary->FillRectangle(primary, screenWidth/3+FRAME_THICKNESS, screenHeight/3+FRAME_THICKNESS, screenWidth/3-2*FRAME_THICKNESS, screenHeight/3-2*FRAME_THICKNESS));
+    if (radio) {
+        DFBCHECK(primary->SetColor(primary, 0x80, 0x10, 0x10, 0xFF));
+    } else {
+        DFBCHECK(primary->SetColor(primary, 0x80, 0x10, 0x10, 0xAA));
+    }
+    DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+    if (radio) {
+        DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xFF));
+    } else {
+        DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xAA));
+    }
+    DFBCHECK(primary->FillRectangle(primary, screenWidth/16+FRAME_THICKNESS, 2.5 * screenHeight/4+FRAME_THICKNESS, 14 * screenWidth/16-2*FRAME_THICKNESS, 1.3 * screenHeight/4-2*FRAME_THICKNESS));
 
 
     /* draw keycode */
@@ -131,8 +138,8 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
     sprintf(keycodeString,"%d",keycode);
 
     /* draw the string */
-    DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x40, 0xff));
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/2, screenHeight/2+FONT_HEIGHT/2, DSTF_CENTER));
+    DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 
     /* update screen */

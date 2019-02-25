@@ -36,10 +36,7 @@ int main(int argc, char **argv)
     channel_t channel;
     uint16_t program_no;
 
-    printf("Started read_init_values");
     ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
-    printf("Initial values: %d %d %d %d %d %d %d %d\n", freq, bandwidth, module, channel.video_pid, channel.audio_pid, channel.audio_type, channel.video_pid);
-    printf("Finished read_init_values");
 
     /* initialize remote controller module */
     ERRORCHECK(remoteControllerInit());

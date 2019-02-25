@@ -203,7 +203,7 @@ void startChannel(int32_t channelNumber)
 			printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
 			streamControllerDeinit();
 		}
-		videoScreen();
+		videoScreen(channelNumber + 1);
 	} else {
 		/* remove previous video stream */
 		if (streamHandleV != 0)
@@ -211,7 +211,7 @@ void startChannel(int32_t channelNumber)
 			Player_Stream_Remove(playerHandle, sourceHandle, streamHandleV);
 			streamHandleV = 0;
 		}
-		radioScreen();
+		radioScreen(channelNumber + 1);
 	}
 
 	if (audioPid != -1)
@@ -235,7 +235,6 @@ void startChannel(int32_t channelNumber)
 	currentChannel.programNumber = channelNumber + 1;
 	currentChannel.audioPid = audioPid;
 	currentChannel.videoPid = videoPid;
-	drawChannelNumber(channelNumber + 1);
 }
 
 void* streamControllerTask()

@@ -13,8 +13,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#define FRAME_THICKNESS 20
-#define FONT_HEIGHT 150
+#define FRAME_THICKNESS 10
+#define FONT_HEIGHT 40
 
 /* helper macro for error checking */
 #define DFBCHECK(x...) { \
@@ -56,6 +56,7 @@ GraphicsControllerError graphicsControllerDeinit();
  */
 GraphicsControllerError drawChannelNumber(int32_t);
 
-void radioScreen();
+void radioScreen(int32_t channel_no);
+void videoScreen(int32_t channel_no);
 
 #endif /* __REMOTE_CONTROLLER_H__ */
