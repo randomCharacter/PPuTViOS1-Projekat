@@ -151,7 +151,7 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
     memset(&timerSpec,0,sizeof(timerSpec));
 
     /* specify the timer timeout time */
-    timerSpec.it_value.tv_sec = 3;
+    timerSpec.it_value.tv_sec = 10;
     timerSpec.it_value.tv_nsec = 0;
 
     /* set the new timer specs */
