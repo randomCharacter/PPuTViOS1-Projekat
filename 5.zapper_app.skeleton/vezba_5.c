@@ -102,6 +102,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 		    pthread_mutex_unlock(&deinitMutex);
 			break;
         case KEYCODE_0:
+            printVolume();
             SetChannel(0);
 			break;
         case KEYCODE_1:

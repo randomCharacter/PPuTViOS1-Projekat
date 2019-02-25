@@ -140,6 +140,12 @@ StreamControllerError channelDown()
 	return SC_NO_ERROR;
 }
 
+StreamControllerError printVolume() {
+	uint32_t volume;
+	Player_Volume_Get(playerHandle, &volume);
+	printf("Volume: %d\n", volume);
+}
+
 StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
 {
 	if (channelInfo == NULL)
