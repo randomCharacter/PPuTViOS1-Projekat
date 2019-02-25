@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <pthread.h>
+#include "init_controller.h"
 
 #define KEYCODE_EXIT 102
 #define KEYCODE_P_PLUS 62

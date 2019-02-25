@@ -10,6 +10,7 @@
 #include <time.h>
 #include <errno.h>
 #include <stdbool.h>
+#include "init_controller.h"
 
 #define DESIRED_FREQUENCY 818000000	        /* Tune frequency in Hz */
 #define BANDWIDTH 8    				        /* Bandwidth in Mhz */
@@ -39,7 +40,7 @@ typedef struct _ChannelInfo
  *
  * @return stream controller error code
  */
-StreamControllerError streamControllerInit();
+StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, channel_t channel, uint16_t program_no);
 
 /**
  * @brief Deinitializes stream controller module

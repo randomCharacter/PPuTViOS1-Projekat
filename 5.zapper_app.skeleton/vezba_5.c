@@ -1,5 +1,6 @@
 #include "remote_controller.h"
 #include "stream_controller.h"
+#include "init_controller.h"
 
 static inline void textColor(int32_t attr, int32_t fg, int32_t bg)
 {
@@ -29,6 +30,17 @@ static ChannelInfo channelInfo;
 
 int main(int argc, char **argv)
 {
+    uint32_t freq;
+    uint32_t bandwidth;
+    t_Module module;
+    channel_t channel;
+    uint16_t program_no;
+
+    printf("Started read_init_values");
+    ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
+    printf("Initial values: %d %d %d %d %d %d %d %d\n", freq, bandwidth, module, channel.video_pid, channel.audio_pid, channel.audio_type, channel.video_pid);
+    printf("Finished read_init_values");
+
     /* initialize remote controller module */
     ERRORCHECK(remoteControllerInit());
 
@@ -38,7 +50,7 @@ int main(int argc, char **argv)
     ERRORCHECK(registerRemoteControllerCallback(remoteControllerCallback));
 
     /* initialize stream controller module */
-    ERRORCHECK(streamControllerInit());
+    ERRORCHECK(streamControllerInit(freq, bandwidth, module, channel, program_no));
 
 
     /* wait for a EXIT remote controller key press event */

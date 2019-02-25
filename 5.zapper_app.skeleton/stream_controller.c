@@ -28,14 +28,26 @@ static pthread_mutex_t demuxMutex = PTHREAD_MUTEX_INITIALIZER;
 static void* streamControllerTask();
 static void startChannel(int32_t channelNumber);
 
+static uint32_t sc_freq;
+static uint32_t sc_bandwidth;
+static t_Module sc_module;
+static channel_t sc_channel;
+static uint16_t sc_program_no;
 
-StreamControllerError streamControllerInit()
+
+StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, channel_t channel, uint16_t program_no)
 {
 	if (pthread_create(&scThread, NULL, &streamControllerTask, NULL))
 	{
 		printf("Error creating input event task!\n");
 		return SC_THREAD_ERROR;
 	}
+
+	sc_freq = freq;
+	sc_bandwidth = bandwidth;
+	sc_module = module;
+	sc_channel = channel;
+	sc_program_no = program_no;
 
 	return SC_NO_ERROR;
 }
@@ -259,13 +271,13 @@ void* streamControllerTask()
 	}
 
 	/* lock to frequency */
-	if(!Tuner_Lock_To_Frequency(DESIRED_FREQUENCY, BANDWIDTH, DVB_T))
+	if(!Tuner_Lock_To_Frequency(sc_freq, sc_bandwidth, sc_module))
 	{
-		printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n",__FUNCTION__,DESIRED_FREQUENCY);
+		printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n",__FUNCTION__,sc_freq);
 	}
 	else
 	{
-		printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__,DESIRED_FREQUENCY);
+		printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__,sc_freq);
 		free(patTable);
 		free(pmtTable);
 		Tuner_Deinit();
