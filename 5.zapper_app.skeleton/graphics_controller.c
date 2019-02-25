@@ -10,6 +10,8 @@ static struct itimerspec timerSpec;
 static struct itimerspec timerSpecOld;
 static DFBSurfaceDescription surfaceDesc;
 
+static int radio = 0;
+
 /* structure for timer specification */
 struct sigevent signalEvent;
 
@@ -17,7 +19,11 @@ static void wipeScreen() {
     int32_t ret;
 
     /* clear screen */
-    DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+    if (radio) {
+        DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
+    } else {
+        DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+    }
     DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
 
     /* update screen */
@@ -29,6 +35,33 @@ static void wipeScreen() {
     if(ret == -1){
         printf("Error setting timer in %s!\n", __FUNCTION__);
     }
+}
+
+void radioScreen() {
+    int32_t ret;
+
+    /* clear screen */
+    DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
+    DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+
+    /* update screen */
+    DFBCHECK(primary->Flip(primary, NULL, 0));
+
+    radio = 1;
+}
+
+void videoScreen() {
+    int32_t ret;
+
+    /* clear screen */
+    DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+    DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+
+    /* update screen */
+    DFBCHECK(primary->Flip(primary, NULL, 0));
+
+
+    radio = 0;
 }
 
 GraphicsControllerError graphicsControllerInit(int argc, char** argv) {

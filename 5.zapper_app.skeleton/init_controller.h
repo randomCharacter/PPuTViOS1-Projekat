@@ -25,14 +25,14 @@ typedef struct channel_st {
 	tStreamType audio_type;
 } channel_t;
 
-typedef enum _GraphicsControllerError
+typedef enum _InitControllerError
 {
 	IC_NO_ERROR = 0,
 	IC_READ_ERROR,
 	IC_PARSE_ERROR
-} GraphicsControllerError;
+} InitControllerError;
 
 
-GraphicsControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, channel_t *channel, uint16_t *program_no);
+InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, channel_t *channel, uint16_t *program_no);
 
 #endif //__INIT_CONTROLLER_H__

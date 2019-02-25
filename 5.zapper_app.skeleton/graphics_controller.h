@@ -56,4 +56,6 @@ GraphicsControllerError graphicsControllerDeinit();
  */
 GraphicsControllerError drawChannelNumber(int32_t);
 
+void radioScreen();
+
 #endif /* __REMOTE_CONTROLLER_H__ */
