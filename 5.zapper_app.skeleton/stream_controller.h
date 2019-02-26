@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include "init_controller.h"
+#include "volume_controller.h"
 
 #define DESIRED_FREQUENCY 818000000	        /* Tune frequency in Hz */
 #define BANDWIDTH 8    				        /* Bandwidth in Mhz */

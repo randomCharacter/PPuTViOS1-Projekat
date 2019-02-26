@@ -140,12 +140,6 @@ StreamControllerError channelDown()
 	return SC_NO_ERROR;
 }
 
-StreamControllerError printVolume() {
-	uint32_t volume;
-	Player_Volume_Get(playerHandle, &volume);
-	printf("Volume: %d\n", volume);
-}
-
 StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
 {
 	if (channelInfo == NULL)
@@ -324,6 +318,16 @@ void* streamControllerTask()
 		printf("\n%s : ERROR Player_Init() fail\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		Tuner_Deinit();
+		return (void*) SC_ERROR;
+	}
+
+	/* initialize volume controller */
+	if (volumeControllerInit(playerHandle)) {
+		printf("\n%s : ERROR volumeControllerInit() fail\n", __FUNCTION__);
+		free(patTable);
+		free(pmtTable);
+		Player_Deinit(playerHandle);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
 	}

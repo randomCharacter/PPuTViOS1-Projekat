@@ -1,6 +1,7 @@
 #include "remote_controller.h"
 #include "stream_controller.h"
 #include "init_controller.h"
+#include "volume_controller.h"
 
 static inline void textColor(int32_t attr, int32_t fg, int32_t bg)
 {
@@ -102,7 +103,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 		    pthread_mutex_unlock(&deinitMutex);
 			break;
         case KEYCODE_0:
-            printVolume();
+            //printVolume();
             SetChannel(0);
 			break;
         case KEYCODE_1:
@@ -132,6 +133,17 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
         case KEYCODE_9:
             SetChannel(9);
 			break;
+        case KEYCODE_V_PLUS:
+            printf("\nV+ pressed\n");
+            volumeUp();
+            break;
+        case KEYCODE_V_MINUS:
+            printf("\nV- pressed\n");
+            volumeDown();
+            break;
+        case KEYCODE_MUTE:
+            muteVolume();
+            break;
 		default:
 			printf("\nPress P+, P-, info or exit! \n\n");
 	}
