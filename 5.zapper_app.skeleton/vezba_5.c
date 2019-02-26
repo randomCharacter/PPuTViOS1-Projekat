@@ -2,6 +2,7 @@
 #include "stream_controller.h"
 #include "init_controller.h"
 #include "volume_controller.h"
+#include "graphics_controller.h"
 
 static inline void textColor(int32_t attr, int32_t fg, int32_t bg)
 {
@@ -74,10 +75,13 @@ int main(int argc, char **argv)
 
 void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 {
+	ChannelInfo channelInfo;
 	printf("Code: %d\n", code);
 	switch(code)
 	{
 		case KEYCODE_INFO:
+			getChannelInfo(&channelInfo);
+			drawChannelNumber(channelInfo.programNumber);
 			printf("\nInfo pressed\n");
 			if (getChannelInfo(&channelInfo) == SC_NO_ERROR)
 			{
@@ -103,7 +107,6 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 			pthread_mutex_unlock(&deinitMutex);
 			break;
 		case KEYCODE_0:
-			//printVolume();
 			SetChannel(0);
 			break;
 		case KEYCODE_1:
