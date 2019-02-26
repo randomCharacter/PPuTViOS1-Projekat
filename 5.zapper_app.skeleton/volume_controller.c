@@ -26,6 +26,8 @@ VolumeControllerError volumeUp() {
 
 	printf("New volume_level: %hu", volume_level);
 
+	drawVolume(volume_level);
+
 	return VC_NO_ERROR;
 }
 
@@ -41,17 +43,13 @@ VolumeControllerError volumeDown() {
 
 	printf("New volume_level: %hu", volume_level);
 
+	drawVolume(volume_level);
+
 	return VC_NO_ERROR;
 }
 
-VolumeControllerError getVolume(uint32_t *vol) {
-	uint32_t volume;
-
-	if (Player_Volume_Get(player, &volume)) {
-		return VC_ERROR;
-	}
-
-	*vol = volume;
+VolumeControllerError getVolume(uint16_t *vol) {
+	*vol = volume_level;
 
 	return VC_NO_ERROR;
 }
@@ -61,6 +59,8 @@ VolumeControllerError muteVolume() {
 	if (Player_Volume_Set(player, 0)) {
 		return VC_ERROR;
 	}
+
+	drawVolume(volume_level);
 
 	return VC_NO_ERROR;
 }

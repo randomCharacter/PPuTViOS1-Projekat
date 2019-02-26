@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <pthread.h>
 
+#include "graphics_controller.h"
+
 #define VOLUME_LEVEL 100000000
 #define INIT_VOLUME 5
 
@@ -25,7 +27,7 @@ VolumeControllerError volumeUp();
 
 VolumeControllerError volumeDown();
 
-VolumeControllerError getVolume(uint32_t *volume);
+VolumeControllerError getVolume(uint16_t *volume);
 
 VolumeControllerError muteVolume();
 

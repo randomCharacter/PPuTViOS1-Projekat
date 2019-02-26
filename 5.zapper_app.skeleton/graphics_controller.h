@@ -59,4 +59,6 @@ GraphicsControllerError drawChannelNumber(int32_t);
 void radioScreen(int32_t channel_no);
 void videoScreen(int32_t channel_no);
 
+GraphicsControllerError drawVolume(uint16_t volume);
+
 #endif /* __REMOTE_CONTROLLER_H__ */

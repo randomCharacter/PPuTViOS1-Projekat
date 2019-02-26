@@ -39,5 +39,6 @@ SRCS += ./tables_parser.c ./remote_controller.c ./stream_controller.c ./graphics
 parser_playback_sample:
 	$(CC) -o vezba_5 $(INCS) $(SRCS) $(CFLAGS) $(LIBS)
 	cp vezba_5 ../../../ploca
+	cp assets/* ../../../ploca
 clean:
 	rm -f vezba_5
