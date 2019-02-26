@@ -298,3 +298,137 @@ ParseErrorCode printPmtTable(PmtTable* pmtTable)
 
 	return TABLES_PARSE_OK;
 }
+
+ParseErrorCode parseEitHeader(const uint8_t* eitHeaderBuffer, EitTableHeader* eitHeader)
+{
+	if(eitHeaderBuffer==NULL || eitHeader==NULL)
+	{
+		printf("\n%s : ERROR received parameters are not ok\n", __FUNCTION__);
+		return TABLES_PARSE_ERROR;
+	}
+
+	eitHeader->tableId = (uint8_t)* eitHeaderBuffer;
+	if (eitHeader->tableId != 0x4E)
+	{
+		printf("\n%s : ERROR it is not a EIT Table\n", __FUNCTION__);
+		return TABLES_PARSE_ERROR;
+	}
+
+	uint8_t lower8Bits = 0;
+	uint8_t higher8Bits = 0;
+	uint16_t all16Bits = 0;
+
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 1));
+	lower8Bits = lower8Bits >> 7;
+	eitHeader->sectionSyntaxIndicator = lower8Bits & 0x01;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 1));
+	lower8Bits = lower8Bits >> 6;
+	eitHeader->reservedFutureUse = lower8Bits & 0x01;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 1));
+	lower8Bits =  lower8Bits >> 4;
+	eitHeader->reserved1 = lower8Bits & 0x03;
+
+	higher8Bits = (uint8_t)(*(eitHeaderBuffer + 1));
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 2));
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitHeader->sectionLength = all16Bits & 0x0FFF;
+
+	higher8Bits = (uint8_t)(*(eitHeaderBuffer + 3));
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 4));
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitHeader->serviceId = all16Bits;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 5));
+	lower8Bits = lower8Bits >> 6;
+	eitHeader->reserved2 = lower8Bits & 0x03;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 5));
+	lower8Bits = lower8Bits >> 1;
+	eitHeader->versionNumber = lower8Bits & 0x1F;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 5));
+	eitHeader->currentNextIndicator = lower8Bits & 0x01;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 6));
+	eitHeader->sectionNumber = lower8Bits;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 7));
+	eitHeader->lastSectionNumber = lower8Bits;
+
+	higher8Bits = (uint8_t)(*(eitHeaderBuffer + 8));
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 9));
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitHeader->transportStreamId = all16Bits;
+
+	higher8Bits = (uint8_t)(*(eitHeaderBuffer) + 10);
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer) + 11);
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitHeader->originalNetworkId = all16Bits;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 12));
+	eitHeader->segmentLastSectionNumber = lower8Bits;
+
+	lower8Bits = (uint8_t)(*(eitHeaderBuffer + 13));
+	eitHeader->lastTableId = lower8Bits;
+
+	return TABLES_PARSE_OK;
+
+}
+
+ParseErrorCode parseEitTableInfo(const uint8_t* eitInfoBuffer, EitTableInfo* eitInfo)
+{
+	if(eitInfoBuffer==NULL || eitInfo==NULL)
+	{
+		printf("\n%s : ERROR received parameters are not ok\n", __FUNCTION__);
+		return TABLES_PARSE_ERROR;
+	}
+
+	uint8_t lower8Bits = 0;
+	uint8_t higher8Bits = 0;
+	uint16_t all16Bits = 0;
+
+	uint64_t timeResult = 0;
+	uint32_t durationResult = 0;
+	uint8_t part0 = 0;
+	uint8_t part1 = 0;
+	uint8_t part2 = 0;
+	uint8_t part3 = 0;
+	uint8_t part4 = 0;
+
+	higher8Bits = (uint8_t)(*(eitInfoBuffer));
+	lower8Bits = (uint8_t)(*(eitInfoBuffer + 1));
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitInfo->eventId = all16Bits;
+
+	part4 = (uint8_t)(*(eitInfoBuffer + 2));
+	part3 = (uint8_t)(*(eitInfoBuffer + 3));
+	part2 = (uint8_t)(*(eitInfoBuffer + 4));
+	part1 = (uint8_t)(*(eitInfoBuffer + 5));
+	part0 = (uint8_t)(*(eitInfoBuffer + 6));
+	timeResult = (((uint64_t)part4 << 32) + (part3 << 24) + (part2 << 16) + (part1 << 8) + part0);
+	eitInfo->startTime = timeResult;
+
+	part2 = (uint8_t)(*(eitInfoBuffer + 7));
+	part1 = (uint8_t)(*(eitInfoBuffer + 8));
+	part0 = (uint8_t)(*(eitInfoBuffer + 9));
+	durationResult = (uint32_t)((part2 << 16) + (part1 << 8) + part0);
+	eitInfo->duration = durationResult;
+
+	lower8Bits = (uint8_t)(*(eitInfoBuffer + 10));
+	lower8Bits = lower8Bits >> 5;
+	eitInfo->runningStatus = lower8Bits & 0x07;
+
+	lower8Bits = (uint8_t)(*(eitInfoBuffer + 10));
+	lower8Bits = lower8Bits >> 4;
+	eitInfo->freeCAmode = lower8Bits & 0x01;
+
+	higher8Bits = (uint8_t)(*(eitInfoBuffer + 10));
+	lower8Bits = (uint8_t)(*(eitInfoBuffer + 11));
+	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
+	eitInfo->descriptorsLoopLength = all16Bits & 0x0FFF;
+
+	return TABLES_PARSE_OK;
+}

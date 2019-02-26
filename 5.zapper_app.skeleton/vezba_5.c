@@ -75,13 +75,12 @@ int main(int argc, char **argv)
 
 void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 {
-	ChannelInfo channelInfo;
 	printf("Code: %d\n", code);
 	switch(code)
 	{
 		case KEYCODE_INFO:
 			getChannelInfo(&channelInfo);
-			drawChannelNumber(channelInfo.programNumber);
+			drawChannelInfo(channelInfo.programNumber, channelInfo.audioPid, channelInfo.videoPid, channelInfo.teletext);
 			printf("\nInfo pressed\n");
 			if (getChannelInfo(&channelInfo) == SC_NO_ERROR)
 			{

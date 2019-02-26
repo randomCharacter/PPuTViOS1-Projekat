@@ -7,6 +7,7 @@
 
 #define TABLES_MAX_NUMBER_OF_PIDS_IN_PAT    20 	    /* Max number of PMT pids in one PAT table */
 #define TABLES_MAX_NUMBER_OF_ELEMENTARY_PID 20       /* Max number of elementary pids in one PMT table */
+#define TABLES_MAX_NUMBER_OF_EIT_PID 20
 
 /**
  * @brief Enumeration of possible tables parser error codes
@@ -89,6 +90,57 @@ typedef struct _PmtTable
 }PmtTable;
 
 /**
+ * @brief Structure that defines EIT table header
+ */
+
+typedef struct _EitTableHeader
+{
+	uint8_t tableId;                   //8
+	uint8_t sectionSyntaxIndicator;    //1
+	uint8_t reservedFutureUse;         //1
+	uint8_t reserved1;                 //2
+	uint16_t sectionLength;            //12
+	uint16_t serviceId;                //16
+	uint8_t reserved2;                 //2
+	uint8_t versionNumber;             //5
+	uint8_t currentNextIndicator;      //1
+	uint8_t sectionNumber;             //8
+	uint8_t lastSectionNumber;         //8
+	uint16_t transportStreamId;        //16
+	uint16_t originalNetworkId;        //16
+	uint8_t segmentLastSectionNumber;  //8
+	uint8_t lastTableId;               //8
+
+}EitTableHeader;
+
+
+/*
+* @brief Structure that defines Eit table
+*/
+
+typedef struct _EitTableInfo
+{
+	uint16_t eventId;               //16
+	uint64_t startTime;             //40
+	uint32_t duration;              //24
+	uint8_t runningStatus;          //3
+	uint8_t freeCAmode;             //1
+	uint16_t descriptorsLoopLength; //12
+}EitTableInfo;
+
+
+/*
+*  @brief Structure that defines EIT table
+*/
+
+typedef struct _EitTable
+{
+	EitTableHeader eitHeader;
+	EitTableInfo eitInfoArray[TABLES_MAX_NUMBER_OF_EIT_PID];
+	uint8_t eventsInfoCount;
+}EitTable;
+
+/**
  * @brief  Parse PAT header.
  *
  * @param  [in]   patHeaderBuffer Buffer that contains PAT header
@@ -157,6 +209,11 @@ ParseErrorCode parsePmtTable(const uint8_t* pmtSectionBuffer, PmtTable* pmtTable
  * @return tables error code
  */
 ParseErrorCode printPmtTable(PmtTable* pmtTable);
+
+
+ParseErrorCode parseEitHeader(const uint8_t* eitHeaderBuffer, EitTableHeader* eitHeader);
+
+ParseErrorCode parseEitTableInfo(const uint8_t* eitInfoBuffer, EitTableInfo* eitInfo);
 
 #endif /* __TABLES_H__ */
 

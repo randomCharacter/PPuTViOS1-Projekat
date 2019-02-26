@@ -184,6 +184,7 @@ void startChannel(int32_t channelNumber)
 	/* get audio and video pids */
 	int16_t audioPid = -1;
 	int16_t videoPid = -1;
+	bool teletext = false;
 	uint8_t i = 0;
 	for (i = 0; i < pmtTable->elementaryInfoCount; i++)
 	{
@@ -197,6 +198,10 @@ void startChannel(int32_t channelNumber)
 		{
 			audioPid = pmtTable->pmtElementaryInfoArray[i].elementaryPid;
 		}
+        if(pmtTable->pmtElementaryInfoArray[i].streamType == 0x6)
+        {
+        	teletext = true;
+        }
 	}
 
 	if (videoPid != -1)
@@ -214,7 +219,7 @@ void startChannel(int32_t channelNumber)
 			printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
 			streamControllerDeinit();
 		}
-		videoScreen(channelNumber + 1);
+		videoScreen(channelNumber + 1, audioPid, videoPid, teletext);
 	} else {
 		/* remove previous video stream */
 		if (streamHandleV != 0)
@@ -222,7 +227,7 @@ void startChannel(int32_t channelNumber)
 			Player_Stream_Remove(playerHandle, sourceHandle, streamHandleV);
 			streamHandleV = 0;
 		}
-		radioScreen(channelNumber + 1);
+		radioScreen(channelNumber + 1, audioPid, videoPid, teletext);
 	}
 
 	if (audioPid != -1)
@@ -246,6 +251,7 @@ void startChannel(int32_t channelNumber)
 	currentChannel.programNumber = channelNumber + 1;
 	currentChannel.audioPid = audioPid;
 	currentChannel.videoPid = videoPid;
+	currentChannel.teletext = teletext;
 }
 
 void* streamControllerTask()

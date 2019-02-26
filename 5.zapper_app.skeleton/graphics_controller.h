@@ -54,10 +54,10 @@ GraphicsControllerError graphicsControllerDeinit();
  *
  * @return graphics cotroller error code
  */
-GraphicsControllerError drawChannelNumber(int32_t);
+GraphicsControllerError drawChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
 
-void radioScreen(int32_t channel_no);
-void videoScreen(int32_t channel_no);
+void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
+void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
 
 GraphicsControllerError drawVolume(uint16_t volume);
 

@@ -81,7 +81,7 @@ static void wipeVolumeScreen() {
 	}
 }
 
-void radioScreen(int32_t channel_no) {
+void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
 	int32_t ret;
 
 	/* clear screen */
@@ -96,10 +96,10 @@ void radioScreen(int32_t channel_no) {
 	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
 
 	radio = 1;
-	drawChannelNumber(channel_no);
+	drawChannelInfo(program_number, audio_pid, video_pid, teletext);
 }
 
-void videoScreen(int32_t channel_no) {
+void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
 	int32_t ret;
 
 	/* clear screen */
@@ -114,8 +114,7 @@ void videoScreen(int32_t channel_no) {
 	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
 
 	radio = 0;
-	drawChannelNumber(channel_no);
-
+	drawChannelInfo(program_number, audio_pid, video_pid, teletext);
 }
 
 GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
@@ -168,7 +167,7 @@ GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 	return GC_NO_ERROR;
 }
 
-GraphicsControllerError drawChannelNumber(int32_t keycode) {
+GraphicsControllerError drawChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
 	int32_t ret;
 	IDirectFBFont *fontInterface = NULL;
 	DFBFontDescription fontDesc;
@@ -198,11 +197,25 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
 	DFBCHECK(primary->SetFont(primary, fontInterface));
 
 	/* generate keycode string */
-	sprintf(keycodeString,"%d",keycode);
+	sprintf(keycodeString,"%d",program_number);
 
 	/* draw the string */
 	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
 	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	if (!radio) {
+		/* video pid */
+		sprintf(keycodeString,"VIDEO PID: %d",video_pid);
+		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	}
+
+	/* audio pid */
+	sprintf(keycodeString,"AUDIO PID: %d",audio_pid);
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	/* teletext */
+	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 
 	/* update screen */
@@ -232,12 +245,25 @@ GraphicsControllerError drawChannelNumber(int32_t keycode) {
 	DFBCHECK(primary->SetFont(primary, fontInterface));
 
 	/* generate keycode string */
-	sprintf(keycodeString,"%d",keycode);
+	sprintf(keycodeString,"%d",program_number);
 
 	/* draw the string */
 	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
 	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
+	if (!radio) {
+		/* video pid */
+		sprintf(keycodeString,"VIDEO PID: %d",video_pid);
+		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	}
+
+	/* audio pid */
+	sprintf(keycodeString,"AUDIO PID: %d",audio_pid);
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	/* teletext */
+	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 	DFBCHECK(fontInterface->Release(fontInterface));
 	// END REPEAT
