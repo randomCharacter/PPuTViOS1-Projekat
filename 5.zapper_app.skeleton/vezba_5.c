@@ -17,10 +17,10 @@ static inline void textColor(int32_t attr, int32_t fg, int32_t bg)
 {                                                                           \
 if (x != 0)                                                                 \
  {                                                                          \
-    textColor(1,1,0);                                                       \
-    printf(" Error!\n File: %s \t Line: <%d>\n", __FILE__, __LINE__);       \
-    textColor(0,7,0);                                                       \
-    return -1;                                                              \
+	textColor(1,1,0);                                                       \
+	printf(" Error!\n File: %s \t Line: <%d>\n", __FILE__, __LINE__);       \
+	textColor(0,7,0);                                                       \
+	return -1;                                                              \
  }                                                                          \
 }
 
@@ -31,28 +31,28 @@ static ChannelInfo channelInfo;
 
 int main(int argc, char **argv)
 {
-    uint32_t freq;
-    uint32_t bandwidth;
-    t_Module module;
-    channel_t channel;
-    uint16_t program_no;
+	uint32_t freq;
+	uint32_t bandwidth;
+	t_Module module;
+	channel_t channel;
+	uint16_t program_no;
 
-    ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
+	ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
 
-    /* initialize remote controller module */
-    ERRORCHECK(remoteControllerInit());
+	/* initialize remote controller module */
+	ERRORCHECK(remoteControllerInit());
 
-    ERRORCHECK(graphicsControllerInit(argc, argv));
+	ERRORCHECK(graphicsControllerInit(argc, argv));
 
-    /* register remote controller callback */
-    ERRORCHECK(registerRemoteControllerCallback(remoteControllerCallback));
+	/* register remote controller callback */
+	ERRORCHECK(registerRemoteControllerCallback(remoteControllerCallback));
 
-    /* initialize stream controller module */
-    ERRORCHECK(streamControllerInit(freq, bandwidth, module, channel, program_no));
+	/* initialize stream controller module */
+	ERRORCHECK(streamControllerInit(freq, bandwidth, module, channel, program_no));
 
 
-    /* wait for a EXIT remote controller key press event */
-    pthread_mutex_lock(&deinitMutex);
+	/* wait for a EXIT remote controller key press event */
+	pthread_mutex_lock(&deinitMutex);
 	if (ETIMEDOUT == pthread_cond_wait(&deinitCond, &deinitMutex))
 	{
 		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
@@ -60,90 +60,90 @@ int main(int argc, char **argv)
 	pthread_mutex_unlock(&deinitMutex);
 
 
-    /* unregister remote controller callback */
-    ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
+	/* unregister remote controller callback */
+	ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
 
-    /* deinitialize remote controller module */
-    ERRORCHECK(remoteControllerDeinit());
+	/* deinitialize remote controller module */
+	ERRORCHECK(remoteControllerDeinit());
 
-    /* deinitialize stream controller module */
-    ERRORCHECK(streamControllerDeinit());
+	/* deinitialize stream controller module */
+	ERRORCHECK(streamControllerDeinit());
 
-    return 0;
+	return 0;
 }
 
 void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 {
-    printf("Code: %d\n", code);
-    switch(code)
+	printf("Code: %d\n", code);
+	switch(code)
 	{
 		case KEYCODE_INFO:
-            printf("\nInfo pressed\n");
-            if (getChannelInfo(&channelInfo) == SC_NO_ERROR)
-            {
-                printf("\n********************* Channel info *********************\n");
-                printf("Program number: %d\n", channelInfo.programNumber);
-                printf("Audio pid: %d\n", channelInfo.audioPid);
-                printf("Video pid: %d\n", channelInfo.videoPid);
-                printf("**********************************************************\n");
-            }
+			printf("\nInfo pressed\n");
+			if (getChannelInfo(&channelInfo) == SC_NO_ERROR)
+			{
+				printf("\n********************* Channel info *********************\n");
+				printf("Program number: %d\n", channelInfo.programNumber);
+				printf("Audio pid: %d\n", channelInfo.audioPid);
+				printf("Video pid: %d\n", channelInfo.videoPid);
+				printf("**********************************************************\n");
+			}
 			break;
 		case KEYCODE_P_PLUS:
 			printf("\nCH+ pressed\n");
-            channelUp();
+			channelUp();
 			break;
 		case KEYCODE_P_MINUS:
-		    printf("\nCH- pressed\n");
-            channelDown();
+			printf("\nCH- pressed\n");
+			channelDown();
 			break;
 		case KEYCODE_EXIT:
 			printf("\nExit pressed\n");
-            pthread_mutex_lock(&deinitMutex);
-		    pthread_cond_signal(&deinitCond);
-		    pthread_mutex_unlock(&deinitMutex);
+			pthread_mutex_lock(&deinitMutex);
+			pthread_cond_signal(&deinitCond);
+			pthread_mutex_unlock(&deinitMutex);
 			break;
-        case KEYCODE_0:
-            //printVolume();
-            SetChannel(0);
+		case KEYCODE_0:
+			//printVolume();
+			SetChannel(0);
 			break;
-        case KEYCODE_1:
-            SetChannel(1);
+		case KEYCODE_1:
+			SetChannel(1);
 			break;
-        case KEYCODE_2:
-            SetChannel(2);
+		case KEYCODE_2:
+			SetChannel(2);
 			break;
-        case KEYCODE_3:
-            SetChannel(3);
+		case KEYCODE_3:
+			SetChannel(3);
 			break;
-        case KEYCODE_4:
-            SetChannel(4);
+		case KEYCODE_4:
+			SetChannel(4);
 			break;
-        case KEYCODE_5:
-            SetChannel(5);
+		case KEYCODE_5:
+			SetChannel(5);
 			break;
-        case KEYCODE_6:
-            SetChannel(6);
+		case KEYCODE_6:
+			SetChannel(6);
 			break;
-        case KEYCODE_7:
-            SetChannel(7);
+		case KEYCODE_7:
+			SetChannel(7);
 			break;
-        case KEYCODE_8:
-            SetChannel(8);
+		case KEYCODE_8:
+			SetChannel(8);
 			break;
-        case KEYCODE_9:
-            SetChannel(9);
+		case KEYCODE_9:
+			SetChannel(9);
 			break;
-        case KEYCODE_V_PLUS:
-            printf("\nV+ pressed\n");
-            volumeUp();
-            break;
-        case KEYCODE_V_MINUS:
-            printf("\nV- pressed\n");
-            volumeDown();
-            break;
-        case KEYCODE_MUTE:
-            muteVolume();
-            break;
+		case KEYCODE_V_PLUS:
+			printf("\nV+ pressed\n");
+			volumeUp();
+			break;
+		case KEYCODE_V_MINUS:
+			printf("\nV- pressed\n");
+			volumeDown();
+			break;
+		case KEYCODE_MUTE:
+			muteVolume();
+			break;
 		default:
 			printf("\nPress P+, P-, info or exit! \n\n");
 	}
