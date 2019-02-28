@@ -2,6 +2,7 @@
 
 static PatTable *patTable;
 static PmtTable *pmtTable;
+static EitTable *eitTable;
 static pthread_cond_t statusCondition = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t statusMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -34,6 +35,11 @@ static t_Module sc_module;
 static channel_t sc_channel;
 static uint16_t sc_program_no;
 
+static char currentName[100];
+static char currentDescription[1000];
+
+static char nextName[100];
+static char nextDescription[1000];
 
 StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, channel_t channel, uint16_t program_no)
 {
@@ -88,6 +94,7 @@ StreamControllerError streamControllerDeinit()
 	/* free allocated memory */
 	free(patTable);
 	free(pmtTable);
+    free(eitTable);
 
 	/* set isInitialized flag */
 	isInitialized = false;
@@ -252,6 +259,17 @@ void startChannel(int32_t channelNumber)
 	currentChannel.audioPid = audioPid;
 	currentChannel.videoPid = videoPid;
 	currentChannel.teletext = teletext;
+
+	/* free EIT table filter*/
+	Demux_Free_Filter(playerHandle, filterHandle);
+
+	/*set demux filter for receive EIT table */
+
+	if(Demux_Set_Filter(playerHandle, 0x12, 0x4E, &filterHandle))
+	{
+		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
+		return;
+	}
 }
 
 void* streamControllerTask()
@@ -277,12 +295,22 @@ void* streamControllerTask()
 	}
 	memset(pmtTable, 0x0, sizeof(PmtTable));
 
+	/* allocate memory for PMT table section */
+	eitTable=(EitTable*)malloc(sizeof(EitTable));
+	if(eitTable==NULL)
+	{
+		printf("\n%s : ERROR Cannot allocate memory\n", __FUNCTION__);
+		return (void*) SC_ERROR;
+	}
+	memset(eitTable, 0x0, sizeof(EitTable));
+
 	/* initialize tuner device */
 	if(Tuner_Init())
 	{
 		printf("\n%s : ERROR Tuner_Init() fail\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		return (void*) SC_ERROR;
 	}
 
@@ -302,6 +330,7 @@ void* streamControllerTask()
 		printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__,sc_freq);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
 	}
@@ -313,6 +342,7 @@ void* streamControllerTask()
 		printf("\n%s : ERROR Lock timeout exceeded!\n",__FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
 	}
@@ -324,6 +354,7 @@ void* streamControllerTask()
 		printf("\n%s : ERROR Player_Init() fail\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
 	}
@@ -333,6 +364,7 @@ void* streamControllerTask()
 		printf("\n%s : ERROR volumeControllerInit() fail\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Player_Deinit(playerHandle);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
@@ -344,6 +376,7 @@ void* streamControllerTask()
 		printf("\n%s : ERROR Player_Source_Open() fail\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Player_Deinit(playerHandle);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
@@ -367,6 +400,7 @@ void* streamControllerTask()
 		printf("\n%s:ERROR Lock timeout exceeded!\n", __FUNCTION__);
 		free(patTable);
 		free(pmtTable);
+		free(eitTable);
 		Player_Deinit(playerHandle);
 		Tuner_Deinit();
 		return (void*) SC_ERROR;
@@ -394,27 +428,53 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	uint8_t tableId = *buffer;
 	if(tableId==0x00)
 	{
-		//printf("\n%s -----PAT TABLE ARRIVED-----\n",__FUNCTION__);
-
 		if(parsePatTable(buffer,patTable)==TABLES_PARSE_OK)
 		{
 			//printPatTable(patTable);
 			pthread_mutex_lock(&demuxMutex);
 			pthread_cond_signal(&demuxCond);
 			pthread_mutex_unlock(&demuxMutex);
-
 		}
 	}
 	else if (tableId==0x02)
 	{
-		//printf("\n%s -----PMT TABLE ARRIVED-----\n",__FUNCTION__);
-
-		if(parsePmtTable(buffer,pmtTable)==TABLES_PARSE_OK)
+		if(parsePmtTable(buffer,pmtTable) == TABLES_PARSE_OK)
 		{
 			//printPmtTable(pmtTable);
 			pthread_mutex_lock(&demuxMutex);
 			pthread_cond_signal(&demuxCond);
 			pthread_mutex_unlock(&demuxMutex);
+		}
+	}
+	else if (tableId == 0x4E)
+	{
+		if(parseEitTable(buffer,eitTable) == TABLES_PARSE_OK)
+		{
+			pthread_mutex_lock(&demuxMutex);
+			pthread_cond_signal(&demuxCond);
+			pthread_mutex_unlock(&demuxMutex);
+			int asd;
+			int i;
+			if (eitTable->eitHeader.serviceId == pmtTable->pmtHeader.programNumber) {
+				for (i = 0; i < eitTable->eventsInfoCount; i++) {
+					if (eitTable->eitInfoArray[i].runningStatus == 0x04)
+					{
+						strcpy(currentName, eitTable->eitInfoArray[i].descriptor.eventNameChar);
+						strcpy(currentDescription, eitTable->eitInfoArray[i].descriptor.descriptionChar);
+					}
+					else if (eitTable->eitInfoArray[i].runningStatus == 0x01)
+					{
+						strcpy(nextName, eitTable->eitInfoArray[i].descriptor.eventNameChar);
+						strcpy(nextDescription, eitTable->eitInfoArray[i].descriptor.descriptionChar);
+					}
+				}
+			}
+
+			printf("currentName: %s\n", currentName);
+			printf("currentDescription: %s\n", currentDescription);
+			printf("nextName: %s\n", nextName);
+			printf("nextDescription: %s\n", nextDescription);
+			printf("nextStatus: %d\n", asd);
 		}
 	}
 	return 0;

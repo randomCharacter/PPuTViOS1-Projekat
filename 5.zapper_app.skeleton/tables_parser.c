@@ -380,6 +380,10 @@ ParseErrorCode parseEitHeader(const uint8_t* eitHeaderBuffer, EitTableHeader* ei
 
 ParseErrorCode parseEitTableInfo(const uint8_t* eitInfoBuffer, EitTableInfo* eitInfo)
 {
+	int i;
+	int j;
+	int k;
+
 	if(eitInfoBuffer==NULL || eitInfo==NULL)
 	{
 		printf("\n%s : ERROR received parameters are not ok\n", __FUNCTION__);
@@ -429,6 +433,83 @@ ParseErrorCode parseEitTableInfo(const uint8_t* eitInfoBuffer, EitTableInfo* eit
 	lower8Bits = (uint8_t)(*(eitInfoBuffer + 11));
 	all16Bits = (uint16_t)((higher8Bits << 8) + lower8Bits);
 	eitInfo->descriptorsLoopLength = all16Bits & 0x0FFF;
+
+
+	k = 0;
+
+	// Parse descriptor
+	//if(eitInfo->runningStatus == 0x4)
+	//{
+		while(k < eitInfo->descriptorsLoopLength)
+		{
+			eitInfo->descriptor.descriptorTag = *(eitInfoBuffer + 12 + k);
+			eitInfo->descriptor.descriptorLength = *(eitInfoBuffer + 12 + 1 + k);
+
+			if(eitInfo->descriptor.descriptorTag == 0x4d)
+			{
+				//name length of event
+				eitInfo->descriptor.eventNameLength = *(eitInfoBuffer + 12 + 5 + k);
+				//getting all the chars of event
+				for(i = 0; i < eitInfo->descriptor.eventNameLength; i++)
+				{
+					eitInfo->descriptor.eventNameChar[i] = (char)(*(eitInfoBuffer + 12 + 6 + i + k + 1));
+				}
+				//setting end of event chars
+				eitInfo->descriptor.eventNameChar[eitInfo->descriptor.eventNameLength - 1] = '\0';
+
+				//description of emision that is streamed
+				eitInfo->descriptor.descriptionLength = *(eitInfoBuffer + 12 + 6 + eitInfo->descriptor.eventNameLength + k);
+				//getting chars
+				for(j = 0; j < eitInfo->descriptor.descriptionLength; j++)
+				{
+					eitInfo->descriptor.descriptionChar[j] = (char)(*(eitInfoBuffer + 12 + 6 + eitInfo->descriptor.eventNameLength + 1 + j + k + 1));
+				}
+				//end of string
+				eitInfo->descriptor.descriptionChar[eitInfo->descriptor.descriptionLength - 1] = '\0';
+			}
+			k += eitInfo->descriptor.descriptorLength + 2;
+		}
+	//}
+
+	return TABLES_PARSE_OK;
+}
+
+
+ParseErrorCode parseEitTable(const uint8_t* eitSectionBuffer, EitTable* eitTable)
+{
+	uint8_t* currentBufferPosition = NULL;
+	uint32_t parsedLength = 0;
+
+	if(eitSectionBuffer == NULL || eitTable == NULL)
+	{
+		printf("\n%s : ERROR received parameters are not ok\n", __FUNCTION__);
+		return TABLES_PARSE_ERROR;
+	}
+
+	if(parseEitHeader(eitSectionBuffer,&(eitTable->eitHeader))!=TABLES_PARSE_OK)
+	{
+		printf("\n%s : ERROR parsing EIT header\n", __FUNCTION__);
+		return TABLES_PARSE_ERROR;
+	}
+
+	parsedLength = 14 /*EIT header size*/ + 4 /*CRC size*/ - 3 /*Not in section length*/;
+	currentBufferPosition = (uint8_t*)(eitSectionBuffer + 14); /*Position after reserved_future_use*/
+	eitTable->eventsInfoCount = 0; /* Number of elementary info presented in EIT table */
+
+	while(parsedLength < eitTable->eitHeader.sectionLength)
+	{
+		if(eitTable->eventsInfoCount > TABLES_MAX_NUMBER_OF_EIT_PID - 1)
+		{
+			printf("\n%s : ERROR there is not enough space in EIT structure for elementary info\n", __FUNCTION__);
+			return TABLES_PARSE_ERROR;
+		}
+		if(parseEitTableInfo(currentBufferPosition, &(eitTable->eitInfoArray[eitTable->eventsInfoCount])) == TABLES_PARSE_OK)
+		{
+			currentBufferPosition += 12 + eitTable->eitInfoArray[eitTable->eventsInfoCount].descriptorsLoopLength; // Size from stream type to elemntary info descriptor
+			parsedLength += 12 + eitTable->eitInfoArray[eitTable->eventsInfoCount].descriptorsLoopLength; // Size from stream type to elementary info descriptor
+			eitTable->eventsInfoCount++;
+		}
+	}
 
 	return TABLES_PARSE_OK;
 }
