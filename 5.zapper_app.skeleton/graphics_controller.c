@@ -19,7 +19,8 @@ static DFBSurfaceDescription surfaceDesc;
 struct sigevent signalEvent;
 struct sigevent volumeSignalEvent;
 
-static bool displaying = false;
+static bool draw = false;
+static uint8_t threadExit = 0;
 
 IDirectFBFont *fontInterface = NULL;
 DFBFontDescription fontDesc;
@@ -36,6 +37,8 @@ static char next_name[100];
 static bool radio = false;
 static bool display_info = false;
 static bool display_volume = false;
+
+static pthread_t gcThread;
 
 static GraphicsControllerError clearInfo() {
 	if (radio) {
@@ -192,12 +195,24 @@ static GraphicsControllerError drawEverything() {
 	return ret;
 }
 
+void* graphicsControllerTask()
+{
+	while(!threadExit)
+	{
+		if (draw)
+		{
+			drawEverything();
+			draw = false;
+		}
+	}
+}
+
 static void wipeScreen() {
 	int ret;
 
 	display_info = false;
 
-	drawEverything();
+	draw = 1;
 
 	/* stop the timer */
 	memset(&timerSpec,0,sizeof(timerSpec));
@@ -211,7 +226,7 @@ static void wipeVolumeScreen() {
 	int ret;
 
 	display_volume = false;
-	drawEverything();
+	draw = 1;
 
 	/* stop the timer */
 	memset(&volumeTimerSpec,0,sizeof(volumeTimerSpec));
@@ -276,10 +291,23 @@ GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 		return GC_ERROR;
 	}
 
+	threadExit = 0;
+	if (pthread_create(&gcThread, NULL, &graphicsControllerTask, NULL))
+	{
+		printf("Error creating input event task!\n");
+		return GC_THREAD_ERROR;
+	}
+
 	return GC_NO_ERROR;
 }
 
 GraphicsControllerError graphicsControllerDeinit() {
+	threadExit = 1;
+	if (pthread_join(gcThread, NULL))
+	{
+		printf("\n%s : ERROR pthread_join fail!\n", __FUNCTION__);
+		return GC_THREAD_ERROR;
+	}
 	DFBCHECK(fontInterface->Release(fontInterface));
 	DFBCHECK(primary->Release(primary));
 	DFBCHECK(dfbInterface->Release(dfbInterface));
@@ -293,7 +321,7 @@ GraphicsControllerError drawChannelInfo(bool is_radio, int16_t program_no, int16
 
 	updateChannelInfo(program_no, audio, video, txt, current, next);
 
-	drawEverything();
+	draw = 1;
 
 	/* set the timer for clearing the screen */
 	memset(&timerSpec,0,sizeof(timerSpec));
@@ -320,7 +348,7 @@ GraphicsControllerError updateChannelInfo(int16_t program_no, int16_t audio, int
 	strcpy(current_name, current);
 	strcpy(next_name, next);
 
-	drawEverything();
+	draw = 1;
 
 	return GC_NO_ERROR;
 }
@@ -331,7 +359,7 @@ GraphicsControllerError drawVolume(uint16_t volume) {
 	sound_volume = volume;
 	display_volume = true;
 
-	drawEverything();
+	draw = 1;
 
 	memset(&volumeTimerSpec,0,sizeof(timerSpec));
 
