@@ -57,8 +57,6 @@ GraphicsControllerError graphicsControllerDeinit();
  */
 GraphicsControllerError drawChannelInfo(bool radio, int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
 GraphicsControllerError updateChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
-void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
-void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
 
 GraphicsControllerError drawVolume(uint16_t volume);
 

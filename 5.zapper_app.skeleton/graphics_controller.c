@@ -1,29 +1,29 @@
 #include "graphics_controller.h"
 
-static timer_t timerId;
-static timer_t volumeTimerId;
+static timer_t timer_id;
+static timer_t volume_timer_id;
 static IDirectFBSurface *primary = NULL;
-IDirectFB *dfbInterface = NULL;
-static int32_t screenWidth = 0;
-static int32_t screenHeight = 0;
+IDirectFB *dfb_interface = NULL;
+static int32_t screen_width = 0;
+static int32_t screen_height = 0;
 
-static struct itimerspec timerSpec;
-static struct itimerspec timerSpecOld;
+static struct itimerspec timer_spec;
+static struct itimerspec timer_spec_old;
 
-static struct itimerspec volumeTimerSpec;
-static struct itimerspec volumeTimerSpecOld;
+static struct itimerspec volume_timer_spec;
+static struct itimerspec volume_timer_spec_old;
 
-static DFBSurfaceDescription surfaceDesc;
+static DFBSurfaceDescription surface_desc;
 
 /* structure for timer specification */
-struct sigevent signalEvent;
-struct sigevent volumeSignalEvent;
+struct sigevent signal_event;
+struct sigevent volume_signal_event;
 
 static bool draw = false;
-static uint8_t threadExit = 0;
+static uint8_t thread_exit = 0;
 
-IDirectFBFont *fontInterface = NULL;
-DFBFontDescription fontDesc;
+IDirectFBFont *font_interface = NULL;
+DFBFontDescription font_desc;
 IDirectFBImageProvider *provider = NULL;
 
 // Displaying data
@@ -38,7 +38,7 @@ static bool radio = false;
 static bool display_info = false;
 static bool display_volume = false;
 
-static pthread_t gcThread;
+static pthread_t gc_thread;
 
 static GraphicsControllerError clearInfo() {
 	if (radio) {
@@ -46,13 +46,13 @@ static GraphicsControllerError clearInfo() {
 	} else {
 		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
 	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+	DFBCHECK(primary->FillRectangle(primary, screen_width/16, 2.5 * screen_height/4, 14 * screen_width/16, 1.3 * screen_height/4));
 
 	return GC_NO_ERROR;
 }
 
 static GraphicsControllerError drawInfo() {
-	char keycodeString[100];
+	char text_string[100];
 
 	/*  draw the frame */
 	if (radio) {
@@ -60,46 +60,46 @@ static GraphicsControllerError drawInfo() {
 	} else {
 		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xAA));
 	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+	DFBCHECK(primary->FillRectangle(primary, screen_width/16, 2.5 * screen_height/4, 14 * screen_width/16, 1.3 * screen_height/4));
 	if (radio) {
 		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xFF));
 	} else {
 		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xAA));
 	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16+FRAME_THICKNESS, 2.5 * screenHeight/4+FRAME_THICKNESS, 14 * screenWidth/16-2*FRAME_THICKNESS, 1.3 * screenHeight/4-2*FRAME_THICKNESS));
+	DFBCHECK(primary->FillRectangle(primary, screen_width/16+FRAME_THICKNESS, 2.5 * screen_height/4+FRAME_THICKNESS, 14 * screen_width/16-2*FRAME_THICKNESS, 1.3 * screen_height/4-2*FRAME_THICKNESS));
 
-	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
-	DFBCHECK(primary->SetFont(primary, fontInterface));
+	DFBCHECK(dfb_interface->CreateFont(dfb_interface, "/home/galois/fonts/DejaVuSans.ttf", &font_desc, &font_interface));
+	DFBCHECK(primary->SetFont(primary, font_interface));
 
-	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = FONT_HEIGHT;
+	font_desc.flags = DFDESC_HEIGHT;
+	font_desc.height = FONT_HEIGHT;
 
 	/* Channel */
-	sprintf(keycodeString,"CHANNEL: %d",program_number);
+	sprintf(text_string,"CHANNEL: %d",program_number);
 	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 	/* Video pid */
 	if (!radio) {
-		sprintf(keycodeString,"VIDEO PID: %d", video_pid);
-		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+		sprintf(text_string,"VIDEO PID: %d", video_pid);
+		DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 	}
 
 	/* Audio pid */
-	sprintf(keycodeString,"AUDIO PID: %d", audio_pid);
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	sprintf(text_string,"AUDIO PID: %d", audio_pid);
+	DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 	/* Teletext */
-	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	sprintf(text_string,"TELETEXT: %s", teletext? "YES" : "NO");
+	DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
 	/* Channel info */
 	if (!radio) {
-		sprintf(keycodeString,"PLAYING: %s", current_name);
-		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 5 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+		sprintf(text_string,"PLAYING: %s", current_name);
+		DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT * 5 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 
-		sprintf(keycodeString,"NEXT:    %s", next_name);
-		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 6 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+		sprintf(text_string,"NEXT:    %s", next_name);
+		DFBCHECK(primary->DrawString(primary, text_string, -1, screen_width/16 + 2*FRAME_THICKNESS, 2.5 * screen_height/4+FONT_HEIGHT * 6 + 4 * FRAME_THICKNESS, DSTF_LEFT));
 	}
 
 	return GC_NO_ERROR;
@@ -108,31 +108,30 @@ static GraphicsControllerError drawInfo() {
 static GraphicsControllerError drawSoundVolume() {
 	int32_t ret;
 	char img_name[50];
-	IDirectFBSurface *logoSurface = NULL;
-	int32_t logoHeight, logoWidth;
+	IDirectFBSurface *logo_surface = NULL;
+	int32_t logo_height, logo_width;
 
 	/* get image name */
 	sprintf(img_name, "volume_%u.png", sound_volume);
 
 	/* create the image provider for the specified file */
-	DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, img_name, &provider));
+	DFBCHECK(dfb_interface->CreateImageProvider(dfb_interface, img_name, &provider));
 
 	/* get surface descriptor for the surface where the image will be rendered */
-	DFBCHECK(provider->GetSurfaceDescription(provider, &surfaceDesc));
+	DFBCHECK(provider->GetSurfaceDescription(provider, &surface_desc));
 
 	/* create the surface for the image */
-	DFBCHECK(dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &logoSurface));
+	DFBCHECK(dfb_interface->CreateSurface(dfb_interface, &surface_desc, &logo_surface));
 
 	/* render the image to the surface */
-	if (logoSurface) {
-		DFBCHECK(provider->RenderTo(provider, logoSurface, NULL));
+	if (logo_surface) {
+		DFBCHECK(provider->RenderTo(provider, logo_surface, NULL));
 	}
-	
 
 	/* fetch the logo size and add (blit) it to the screen */
-	DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
+	DFBCHECK(logo_surface->GetSize(logo_surface, &logo_width, &logo_height));
 	DFBCHECK(primary->Blit(primary,
-						   /*source surface*/ logoSurface,
+						   /*source surface*/ logo_surface,
 						   /*source region, NULL to blit the whole surface*/ NULL,
 						   /*destination x coordinate of the upper left corner of the image*/50,
 						   /*destination y coordinate of the upper left corner of the image*/50));
@@ -140,8 +139,8 @@ static GraphicsControllerError drawSoundVolume() {
 	if (provider != NULL) {
 		provider->Release(provider);
 	}
-	if (logoSurface != NULL) {
-		logoSurface->Release(logoSurface);
+	if (logo_surface != NULL) {
+		logo_surface->Release(logo_surface);
 	}
 
 	return GC_NO_ERROR;
@@ -161,14 +160,14 @@ static GraphicsControllerError clearSoundVolume() {
 
 static GraphicsControllerError drawRadioScreen() {
 	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+	DFBCHECK(primary->FillRectangle(primary, 0, 0, screen_width, screen_height));
 
 	return GC_NO_ERROR;
 }
 
 static GraphicsControllerError clearRadioScreen() {
 	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+	DFBCHECK(primary->FillRectangle(primary, 0, 0, screen_width, screen_height));
 
 	return GC_NO_ERROR;
 }
@@ -197,7 +196,7 @@ static GraphicsControllerError drawEverything() {
 
 void* graphicsControllerTask()
 {
-	while(!threadExit)
+	while(!thread_exit)
 	{
 		if (draw)
 		{
@@ -215,8 +214,8 @@ static void wipeScreen() {
 	draw = 1;
 
 	/* stop the timer */
-	memset(&timerSpec,0,sizeof(timerSpec));
-	ret = timer_settime(timerId,0,&timerSpec,&timerSpecOld);
+	memset(&timer_spec,0,sizeof(timer_spec));
+	ret = timer_settime(timer_id,0,&timer_spec,&timer_spec_old);
 	if(ret == -1){
 		printf("Error setting timer in %s!\n", __FUNCTION__);
 	}
@@ -229,70 +228,62 @@ static void wipeVolumeScreen() {
 	draw = 1;
 
 	/* stop the timer */
-	memset(&volumeTimerSpec,0,sizeof(volumeTimerSpec));
-	ret = timer_settime(volumeTimerId,0,&volumeTimerSpec,&volumeTimerSpecOld);
+	memset(&volume_timer_spec,0,sizeof(volume_timer_spec));
+	ret = timer_settime(volume_timer_id,0,&volume_timer_spec,&volume_timer_spec_old);
 	if(ret == -1){
 		printf("Error setting timer in %s!\n", __FUNCTION__);
 	}
-}
-
-void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name) {
-	drawChannelInfo(true, program_number, audio_pid, video_pid, teletext, current_name, next_name);
-}
-
-void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name) {
-	drawChannelInfo(false, program_number, audio_pid, video_pid, teletext, current_name, next_name);
 }
 
 GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 	/* initialize DirectFB */
 	int32_t ret;
 	DFBCHECK(DirectFBInit(&argc, &argv));
-	DFBCHECK(DirectFBCreate(&dfbInterface));
-	DFBCHECK(dfbInterface->SetCooperativeLevel(dfbInterface, DFSCL_FULLSCREEN));
+	DFBCHECK(DirectFBCreate(&dfb_interface));
+	DFBCHECK(dfb_interface->SetCooperativeLevel(dfb_interface, DFSCL_FULLSCREEN));
 
 
 	/* create primary surface with double buffering enabled */
-	surfaceDesc.flags = DSDESC_CAPS;
-	surfaceDesc.caps = DSCAPS_PRIMARY | DSCAPS_FLIPPING;
-	DFBCHECK (dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &primary));
+	surface_desc.flags = DSDESC_CAPS;
+	surface_desc.caps = DSCAPS_PRIMARY | DSCAPS_FLIPPING;
+	DFBCHECK (dfb_interface->CreateSurface(dfb_interface, &surface_desc, &primary));
 
 	/* fetch the screen size */
-	DFBCHECK (primary->GetSize(primary, &screenWidth, &screenHeight));
+	DFBCHECK (primary->GetSize(primary, &screen_width, &screen_height));
 
 
 	/* clear the screen before drawing anything (draw black full screen rectangle)*/
 
 	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xff));
-	//DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
+	//DFBCHECK(primary->FillRectangle(primary, screen_width/3, screen_height/3, screen_width/3, screen_height/3));
 
 	/* create timer */
-	signalEvent.sigev_notify = SIGEV_THREAD; /* tell the OS to notify you about timer by calling the specified function */
-	signalEvent.sigev_notify_function = wipeScreen; /* function to be called when timer runs out */
-	signalEvent.sigev_value.sival_ptr = NULL; /* thread arguments */
-	signalEvent.sigev_notify_attributes = NULL; /* thread attributes (e.g. thread stack size) - if NULL default attributes are applied */
+	signal_event.sigev_notify = SIGEV_THREAD; /* tell the OS to notify you about timer by calling the specified function */
+	signal_event.sigev_notify_function = wipeScreen; /* function to be called when timer runs out */
+	signal_event.sigev_value.sival_ptr = NULL; /* thread arguments */
+	signal_event.sigev_notify_attributes = NULL; /* thread attributes (e.g. thread stack size) - if NULL default attributes are applied */
 	ret = timer_create(/*clock for time measuring*/CLOCK_REALTIME,
-					   /*timer settings*/&signalEvent,
-					   /*where to store the ID of the newly created timer*/&timerId);
+					   /*timer settings*/&signal_event,
+					   /*where to store the ID of the newly created timer*/&timer_id);
 
-	volumeSignalEvent.sigev_notify = SIGEV_THREAD; /* tell the OS to notify you about timer by calling the specified function */
-	volumeSignalEvent.sigev_notify_function = wipeVolumeScreen; /* function to be called when timer runs out */
-	volumeSignalEvent.sigev_value.sival_ptr = NULL; /* thread arguments */
-	volumeSignalEvent.sigev_notify_attributes = NULL; /* thread attributes (e.g. thread stack size) - if NULL default attributes are applied */
+	volume_signal_event.sigev_notify = SIGEV_THREAD; /* tell the OS to notify you about timer by calling the specified function */
+	volume_signal_event.sigev_notify_function = wipeVolumeScreen; /* function to be called when timer runs out */
+	volume_signal_event.sigev_value.sival_ptr = NULL; /* thread arguments */
+	volume_signal_event.sigev_notify_attributes = NULL; /* thread attributes (e.g. thread stack size) - if NULL default attributes are applied */
 	ret = timer_create(/*clock for time measuring*/CLOCK_REALTIME,
-					   /*timer settings*/&volumeSignalEvent,
-					   /*where to store the ID of the newly created timer*/&volumeTimerId);
+					   /*timer settings*/&volume_signal_event,
+					   /*where to store the ID of the newly created timer*/&volume_timer_id);
 
 	if(ret == -1){
 		printf("Error creating timer, abort!\n");
 		primary->Release(primary);
-		dfbInterface->Release(dfbInterface);
-		DFBCHECK(fontInterface->Release(fontInterface));
+		dfb_interface->Release(dfb_interface);
+		DFBCHECK(font_interface->Release(font_interface));
 		return GC_ERROR;
 	}
 
-	threadExit = 0;
-	if (pthread_create(&gcThread, NULL, &graphicsControllerTask, NULL))
+	thread_exit = 0;
+	if (pthread_create(&gc_thread, NULL, &graphicsControllerTask, NULL))
 	{
 		printf("Error creating input event task!\n");
 		return GC_THREAD_ERROR;
@@ -302,15 +293,15 @@ GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 }
 
 GraphicsControllerError graphicsControllerDeinit() {
-	threadExit = 1;
-	if (pthread_join(gcThread, NULL))
+	thread_exit = 1;
+	if (pthread_join(gc_thread, NULL))
 	{
 		printf("\n%s : ERROR pthread_join fail!\n", __FUNCTION__);
 		return GC_THREAD_ERROR;
 	}
-	DFBCHECK(fontInterface->Release(fontInterface));
+	DFBCHECK(font_interface->Release(font_interface));
 	DFBCHECK(primary->Release(primary));
-	DFBCHECK(dfbInterface->Release(dfbInterface));
+	DFBCHECK(dfb_interface->Release(dfb_interface));
 }
 
 GraphicsControllerError drawChannelInfo(bool is_radio, int16_t program_no, int16_t audio, int16_t video, bool txt, char* current, char* next) {
@@ -324,14 +315,14 @@ GraphicsControllerError drawChannelInfo(bool is_radio, int16_t program_no, int16
 	draw = 1;
 
 	/* set the timer for clearing the screen */
-	memset(&timerSpec,0,sizeof(timerSpec));
+	memset(&timer_spec,0,sizeof(timer_spec));
 
 	/* specify the timer timeout time */
-	timerSpec.it_value.tv_sec = 3;
-	timerSpec.it_value.tv_nsec = 0;
+	timer_spec.it_value.tv_sec = 3;
+	timer_spec.it_value.tv_nsec = 0;
 
 	/* set the new timer specs */
-	ret = timer_settime(timerId,0,&timerSpec,&timerSpecOld);
+	ret = timer_settime(timer_id,0,&timer_spec,&timer_spec_old);
 	if(ret == -1){
 		printf("Error setting timer in %s!\n", __FUNCTION__);
 		return GC_ERROR;
@@ -361,14 +352,14 @@ GraphicsControllerError drawVolume(uint16_t volume) {
 
 	draw = 1;
 
-	memset(&volumeTimerSpec,0,sizeof(timerSpec));
+	memset(&volume_timer_spec,0,sizeof(timer_spec));
 
 	/* specify the timer timeout time */
-	volumeTimerSpec.it_value.tv_sec = 3;
-	volumeTimerSpec.it_value.tv_nsec = 0;
+	volume_timer_spec.it_value.tv_sec = 3;
+	volume_timer_spec.it_value.tv_nsec = 0;
 	/* set the new timer specs */
 
-	ret = timer_settime(volumeTimerId,0,&volumeTimerSpec,&volumeTimerSpecOld);
+	ret = timer_settime(volume_timer_id,0,&volume_timer_spec,&volume_timer_spec_old);
 	if(ret == -1){
 		printf("Error setting timer in %s!\n", __FUNCTION__);
 		return GC_ERROR;

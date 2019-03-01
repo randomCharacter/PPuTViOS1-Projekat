@@ -68,7 +68,7 @@ RemoteControllerError remoteControllerDeinit();
  * @param  [in] remote controller callback - pointer to remote controller callback function
  * @return remote controller error code
  */
-RemoteControllerError registerRemoteControllerCallback(RemoteControllerCallback remoteControllerCallback);
+RemoteControllerError registerRemoteControllerCallback(RemoteControllerCallback remote_controller_callback);
 
 /*
  * @brief Unregisters remote controller callback
@@ -76,7 +76,7 @@ RemoteControllerError registerRemoteControllerCallback(RemoteControllerCallback 
  * @param  [in] remoteControllerCallback - pointer to remote controller callback function
  * @return remote controller error code
  */
-RemoteControllerError unregisterRemoteControllerCallback(RemoteControllerCallback remoteControllerCallback);
+RemoteControllerError unregisterRemoteControllerCallback(RemoteControllerCallback remote_controller_callback);
 
 #endif /* __REMOTE_CONTROLLER_H__ */
 

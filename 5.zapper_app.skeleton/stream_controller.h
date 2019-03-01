@@ -47,7 +47,7 @@ typedef struct _ChannelInfo
  *
  * @return stream controller error code
  */
-StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, channel_t channel, uint16_t program_no);
+StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, ChannelT channel, uint16_t program_no);
 
 /**
  * @brief Deinitializes stream controller module
@@ -76,8 +76,8 @@ StreamControllerError channelDown();
  * @param [out] channelInfo - channel info structure with current channel info
  * @return stream controller error code
  */
-StreamControllerError getChannelInfo(ChannelInfo* channelInfo);
+StreamControllerError getChannelInfo(ChannelInfo* channel_info);
 
-StreamControllerError SetChannel(int32_t channelNumber);
+StreamControllerError SetChannel(int32_t channel_number);
 
 #endif /* __STREAM_CONTROLLER_H__ */

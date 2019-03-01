@@ -26,8 +26,8 @@ if (x != 0)                                                                 \
 }
 
 static void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value);
-static pthread_cond_t deinitCond = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t deinitMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t deinit_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t deinit_mutex = PTHREAD_MUTEX_INITIALIZER;
 static ChannelInfo channelInfo;
 
 int main(int argc, char **argv)
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	uint32_t freq;
 	uint32_t bandwidth;
 	t_Module module;
-	channel_t channel;
+	ChannelT channel;
 	uint16_t program_no;
 
 	ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
@@ -53,12 +53,12 @@ int main(int argc, char **argv)
 
 
 	/* wait for a EXIT remote controller key press event */
-	pthread_mutex_lock(&deinitMutex);
-	if (ETIMEDOUT == pthread_cond_wait(&deinitCond, &deinitMutex))
+	pthread_mutex_lock(&deinit_mutex);
+	if (ETIMEDOUT == pthread_cond_wait(&deinit_cond, &deinit_mutex))
 	{
 		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
 	}
-	pthread_mutex_unlock(&deinitMutex);
+	pthread_mutex_unlock(&deinit_mutex);
 
 	/* unregister remote controller callback */
 	ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
@@ -102,9 +102,9 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 			break;
 		case KEYCODE_EXIT:
 			printf("\nExit pressed\n");
-			pthread_mutex_lock(&deinitMutex);
-			pthread_cond_signal(&deinitCond);
-			pthread_mutex_unlock(&deinitMutex);
+			pthread_mutex_lock(&deinit_mutex);
+			pthread_cond_signal(&deinit_cond);
+			pthread_mutex_unlock(&deinit_mutex);
 			break;
 		case KEYCODE_0:
 			SetChannel(0);

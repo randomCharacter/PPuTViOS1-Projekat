@@ -165,7 +165,7 @@ typedef struct _EitTable
  * @param  [out]  patHeader PAT header
  * @return tables error code
  */
-ParseErrorCode parsePatHeader(const uint8_t* patHeaderBuffer, PatHeader* patHeader);
+ParseErrorCode parsePatHeader(const uint8_t* pat_header_buffer, PatHeader* pat_header);
 
 /**
  * @brief  Parse PAT Service information.
@@ -174,7 +174,7 @@ ParseErrorCode parsePatHeader(const uint8_t* patHeaderBuffer, PatHeader* patHead
  * @param  [out]  descriptor PAT Service info
  * @return tables error code
  */
-ParseErrorCode parsePatServiceInfo(const uint8_t* patServiceInfoBuffer, PatServiceInfo* patServiceInfo);
+ParseErrorCode parsePatServiceInfo(const uint8_t* pat_service_info_buffer, PatServiceInfo* pat_service_info);
 
 /**
  * @brief  Parse PAT Table.
@@ -183,7 +183,7 @@ ParseErrorCode parsePatServiceInfo(const uint8_t* patServiceInfoBuffer, PatServi
  * @param  [out]  patTable PAT Table
  * @return tables error code
  */
-ParseErrorCode parsePatTable(const uint8_t* patSectionBuffer, PatTable* patTable);
+ParseErrorCode parsePatTable(const uint8_t* pat_section_suffer, PatTable* pat_table);
 
 /**
  * @brief  Print PAT Table
@@ -191,7 +191,7 @@ ParseErrorCode parsePatTable(const uint8_t* patSectionBuffer, PatTable* patTable
  * @param  [in]   patTable PAT table to be printed
  * @return tables error code
  */
-ParseErrorCode printPatTable(PatTable* patTable);
+ParseErrorCode printPatTable(PatTable* pat_table);
 
 /**
  * @brief Parse pmt table
@@ -200,7 +200,7 @@ ParseErrorCode printPatTable(PatTable* patTable);
  * @param [out] pmtHeader PMT table header
  * @return tables error code
  */
-ParseErrorCode parsePmtHeader(const uint8_t* pmtHeaderBuffer, PmtTableHeader* pmtHeader);
+ParseErrorCode parsePmtHeader(const uint8_t* pmt_header_buffer, PmtTableHeader* pmt_header);
 
 /**
  * @brief Parse PMT elementary info
@@ -209,7 +209,7 @@ ParseErrorCode parsePmtHeader(const uint8_t* pmtHeaderBuffer, PmtTableHeader* pm
  * @param [out] PMT elementary info
  * @return tables error code
  */
-ParseErrorCode parsePmtElementaryInfo(const uint8_t* pmtElementaryInfoBuffer, PmtElementaryInfo* pmtElementaryInfo);
+ParseErrorCode parsePmtElementaryInfo(const uint8_t* pmt_elementary_info_buffer, PmtElementaryInfo* pmt_elementary_info);
 
 /**
  * @brief Parse PMT table
@@ -218,7 +218,7 @@ ParseErrorCode parsePmtElementaryInfo(const uint8_t* pmtElementaryInfoBuffer, Pm
  * @param [out] pmtTable PMT table
  * @return tables error code
  */
-ParseErrorCode parsePmtTable(const uint8_t* pmtSectionBuffer, PmtTable* pmtTable);
+ParseErrorCode parsePmtTable(const uint8_t* pmtSection_buffer, PmtTable* pmt_table);
 
 /**
  * @brief Print PMT table
@@ -226,13 +226,13 @@ ParseErrorCode parsePmtTable(const uint8_t* pmtSectionBuffer, PmtTable* pmtTable
  * @param [in] pmtTable PMT table
  * @return tables error code
  */
-ParseErrorCode printPmtTable(PmtTable* pmtTable);
+ParseErrorCode printPmtTable(PmtTable* pmt_table);
 
-ParseErrorCode parseEitHeader(const uint8_t* eitHeaderBuffer, EitTableHeader* eitHeader);
+ParseErrorCode parseEitHeader(const uint8_t* eit_header_buffer, EitTableHeader* eit_header);
 
-ParseErrorCode parseEitTableInfo(const uint8_t* eitInfoBuffer, EitTableInfo* eitInfo);
+ParseErrorCode parseEitTableInfo(const uint8_t* eit_info_buffer, EitTableInfo* eit_info);
 
-ParseErrorCode parseEitTable(const uint8_t* eitSectionBuffer, EitTable* eitTable);
+ParseErrorCode parseEitTable(const uint8_t* eit_section_buffer, EitTable* eit_table);
 #endif /* __TABLES_H__ */
 
 

@@ -23,7 +23,7 @@ typedef struct channel_st {
 	uint16_t audio_pid;
 	tStreamType video_type;
 	tStreamType audio_type;
-} channel_t;
+} ChannelT;
 
 typedef enum _InitControllerError
 {
@@ -33,6 +33,6 @@ typedef enum _InitControllerError
 } InitControllerError;
 
 
-InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, channel_t *channel, uint16_t *program_no);
+InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, ChannelT *channel, uint16_t *program_no);
 
 #endif //__INIT_CONTROLLER_H__

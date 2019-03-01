@@ -1,6 +1,6 @@
 #include "init_controller.h"
 
-InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, channel_t *channel, uint16_t *program_no) {
+InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, ChannelT *channel, uint16_t *program_no) {
 	FILE *f;
 
 	char key[INIT_KEY_SIZE];
