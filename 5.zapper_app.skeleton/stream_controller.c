@@ -35,11 +35,13 @@ static t_Module sc_module;
 static channel_t sc_channel;
 static uint16_t sc_program_no;
 
-static char currentName[100];
-static char currentDescription[1000];
+static char currentName[100] = "N/A";
+static char currentDescription[1000] = "N/A";
 
-static char nextName[100];
-static char nextDescription[1000];
+static char nextName[100] = "N/A";
+static char nextDescription[1000] = "N/A";
+
+static update;
 
 StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, channel_t channel, uint16_t program_no)
 {
@@ -158,6 +160,10 @@ StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
 	channelInfo->programNumber = currentChannel.programNumber;
 	channelInfo->audioPid = currentChannel.audioPid;
 	channelInfo->videoPid = currentChannel.videoPid;
+	channelInfo->isRadio = currentChannel.isRadio;
+	channelInfo->teletext = currentChannel.teletext;
+	strcpy(channelInfo->currentInfo, currentName);
+	strcpy(channelInfo->nextInfo, nextName);
 
 	return SC_NO_ERROR;
 }
@@ -168,6 +174,9 @@ StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
  */
 void startChannel(int32_t channelNumber)
 {
+	strcpy(currentName, "");
+	strcpy(nextName, "");
+	update = true;
 
 	/* free PAT table filter */
 	Demux_Free_Filter(playerHandle, filterHandle);
@@ -226,7 +235,6 @@ void startChannel(int32_t channelNumber)
 			printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
 			streamControllerDeinit();
 		}
-		videoScreen(channelNumber + 1, audioPid, videoPid, teletext);
 	} else {
 		/* remove previous video stream */
 		if (streamHandleV != 0)
@@ -234,7 +242,6 @@ void startChannel(int32_t channelNumber)
 			Player_Stream_Remove(playerHandle, sourceHandle, streamHandleV);
 			streamHandleV = 0;
 		}
-		radioScreen(channelNumber + 1, audioPid, videoPid, teletext);
 	}
 
 	if (audioPid != -1)
@@ -260,6 +267,7 @@ void startChannel(int32_t channelNumber)
 	currentChannel.videoPid = videoPid;
 	currentChannel.teletext = teletext;
 
+
 	/* free EIT table filter*/
 	Demux_Free_Filter(playerHandle, filterHandle);
 
@@ -269,6 +277,18 @@ void startChannel(int32_t channelNumber)
 	{
 		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
 		return;
+	}
+
+	pthread_mutex_lock(&demuxMutex);
+	pthread_cond_signal(&demuxCond);
+	pthread_mutex_unlock(&demuxMutex);
+
+	if (videoPid != -1) {
+		currentChannel.isRadio = false;
+		drawChannelInfo(false, channelNumber + 1, audioPid, videoPid, teletext, currentName, nextName);
+	} else {
+		currentChannel.isRadio = true;
+		drawChannelInfo(true, channelNumber + 1, audioPid, videoPid, teletext, currentName, nextName);
 	}
 }
 
@@ -430,7 +450,6 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	{
 		if(parsePatTable(buffer,patTable)==TABLES_PARSE_OK)
 		{
-			//printPatTable(patTable);
 			pthread_mutex_lock(&demuxMutex);
 			pthread_cond_signal(&demuxCond);
 			pthread_mutex_unlock(&demuxMutex);
@@ -440,7 +459,6 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	{
 		if(parsePmtTable(buffer,pmtTable) == TABLES_PARSE_OK)
 		{
-			//printPmtTable(pmtTable);
 			pthread_mutex_lock(&demuxMutex);
 			pthread_cond_signal(&demuxCond);
 			pthread_mutex_unlock(&demuxMutex);
@@ -450,10 +468,6 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	{
 		if(parseEitTable(buffer,eitTable) == TABLES_PARSE_OK)
 		{
-			pthread_mutex_lock(&demuxMutex);
-			pthread_cond_signal(&demuxCond);
-			pthread_mutex_unlock(&demuxMutex);
-			int asd;
 			int i;
 			if (eitTable->eitHeader.serviceId == pmtTable->pmtHeader.programNumber) {
 				for (i = 0; i < eitTable->eventsInfoCount; i++) {
@@ -469,12 +483,12 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 					}
 				}
 			}
-
-			printf("currentName: %s\n", currentName);
-			printf("currentDescription: %s\n", currentDescription);
-			printf("nextName: %s\n", nextName);
-			printf("nextDescription: %s\n", nextDescription);
-			printf("nextStatus: %d\n", asd);
+			strcpy(currentChannel.currentInfo, currentName);
+			strcpy(currentChannel.nextInfo, nextName);
+			if (update && strcmp(nextName, "") && strcmp(currentName, "")) {
+				updateChannelInfo(currentChannel.programNumber, currentChannel.audioPid, currentChannel.videoPid, currentChannel.teletext, currentChannel.currentInfo, currentChannel.nextInfo);
+				update = false;
+			}
 		}
 	}
 	return 0;

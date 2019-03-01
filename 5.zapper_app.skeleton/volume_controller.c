@@ -15,6 +15,7 @@ VolumeControllerError volumeControllerInit(uint32_t playerHandle) {
 }
 
 VolumeControllerError volumeUp() {
+	printf("VoulmeUp()\n");
 	if (volume_level < 10) {
 		volume_level++;
 	} else {
@@ -24,7 +25,7 @@ VolumeControllerError volumeUp() {
 		return VC_ERROR;
 	}
 
-	printf("New volume_level: %hu", volume_level);
+	printf("New volume_level: %hu\n", volume_level);
 
 	drawVolume(volume_level);
 
@@ -32,6 +33,7 @@ VolumeControllerError volumeUp() {
 }
 
 VolumeControllerError volumeDown() {
+	printf("VoulmeDown()\n");
 	if (volume_level > 0) {
 		volume_level--;
 	} else {

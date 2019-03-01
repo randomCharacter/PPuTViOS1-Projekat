@@ -15,33 +15,189 @@ static struct itimerspec volumeTimerSpecOld;
 
 static DFBSurfaceDescription surfaceDesc;
 
-static int radio = 0;
-
 /* structure for timer specification */
 struct sigevent signalEvent;
 struct sigevent volumeSignalEvent;
 
-static void wipeScreen() {
-	int32_t ret;
+static bool displaying = false;
 
-	/* clear screen */
+IDirectFBFont *fontInterface = NULL;
+DFBFontDescription fontDesc;
+IDirectFBImageProvider *provider = NULL;
+
+// Displaying data
+static uint16_t sound_volume = 0;
+static int16_t program_number;
+static int16_t audio_pid;
+static int16_t video_pid;
+static bool teletext;
+static char current_name[100];
+static char next_name[100];
+static bool radio = false;
+static bool display_info = false;
+static bool display_volume = false;
+
+static GraphicsControllerError clearInfo() {
 	if (radio) {
 		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
 	} else {
 		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
 	}
 	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError drawInfo() {
+	char keycodeString[100];
+
+	/*  draw the frame */
+	if (radio) {
+		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xFF));
+	} else {
+		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xAA));
+	}
+	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+	if (radio) {
+		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xFF));
+	} else {
+		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xAA));
+	}
+	DFBCHECK(primary->FillRectangle(primary, screenWidth/16+FRAME_THICKNESS, 2.5 * screenHeight/4+FRAME_THICKNESS, 14 * screenWidth/16-2*FRAME_THICKNESS, 1.3 * screenHeight/4-2*FRAME_THICKNESS));
+
+	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
+	DFBCHECK(primary->SetFont(primary, fontInterface));
+
+	fontDesc.flags = DFDESC_HEIGHT;
+	fontDesc.height = FONT_HEIGHT;
+
+	/* Channel */
+	sprintf(keycodeString,"CHANNEL: %d",program_number);
+	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	/* Video pid */
+	if (!radio) {
+		sprintf(keycodeString,"VIDEO PID: %d", video_pid);
+		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	}
+
+	/* Audio pid */
+	sprintf(keycodeString,"AUDIO PID: %d", audio_pid);
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	/* Teletext */
+	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
+	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+	/* Channel info */
+	if (!radio) {
+		sprintf(keycodeString,"PLAYING: %s", current_name);
+		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 5 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+
+		sprintf(keycodeString,"NEXT:    %s", next_name);
+		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 6 + 4 * FRAME_THICKNESS, DSTF_LEFT));
+	}
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError drawSoundVolume() {
+	int32_t ret;
+	char img_name[50];
+	IDirectFBSurface *logoSurface = NULL;
+	int32_t logoHeight, logoWidth;
+
+	/* get image name */
+	sprintf(img_name, "volume_%u.png", sound_volume);
+
+	/* create the image provider for the specified file */
+	DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, img_name, &provider));
+
+	/* get surface descriptor for the surface where the image will be rendered */
+	DFBCHECK(provider->GetSurfaceDescription(provider, &surfaceDesc));
+
+	/* create the surface for the image */
+	DFBCHECK(dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &logoSurface));
+
+	/* render the image to the surface */
+	if (logoSurface) {
+		DFBCHECK(provider->RenderTo(provider, logoSurface, NULL));
+	}
+	
+
+	/* fetch the logo size and add (blit) it to the screen */
+	DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
+	DFBCHECK(primary->Blit(primary,
+						   /*source surface*/ logoSurface,
+						   /*source region, NULL to blit the whole surface*/ NULL,
+						   /*destination x coordinate of the upper left corner of the image*/50,
+						   /*destination y coordinate of the upper left corner of the image*/50));
+
+	if (provider != NULL) {
+		provider->Release(provider);
+	}
+	if (logoSurface != NULL) {
+		logoSurface->Release(logoSurface);
+	}
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError clearSoundVolume() {
+	/* clear screen */
+	if (radio) {
+		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
+	} else {
+		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+	}
+	DFBCHECK(primary->FillRectangle(primary, 0, 0, 500, 500));
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError drawRadioScreen() {
+	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
+	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError clearRadioScreen() {
+	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
+
+	return GC_NO_ERROR;
+}
+
+static GraphicsControllerError drawEverything() {
+	int ret = 0;
+	if (radio) {
+		ret = ret || drawRadioScreen();
+	} else {
+		ret = ret || clearRadioScreen();
+	}
+
+	if (display_info) {
+		ret = ret || drawInfo();
+	}
+
+	if (display_volume) {
+		ret = ret || drawSoundVolume();
+	}
 
 	/* update screen */
 	DFBCHECK(primary->Flip(primary, NULL, 0));
 
-	/* clear screen */
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
+	return ret;
+}
+
+static void wipeScreen() {
+	int ret;
+
+	display_info = false;
+
+	drawEverything();
 
 	/* stop the timer */
 	memset(&timerSpec,0,sizeof(timerSpec));
@@ -52,26 +208,10 @@ static void wipeScreen() {
 }
 
 static void wipeVolumeScreen() {
-	int32_t ret;
+	int ret;
 
-	/* clear screen */
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	}
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, 500, 500));
-
-	/* update screen */
-	DFBCHECK(primary->Flip(primary, NULL, 0));
-
-	/* clear screen */
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	}
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, 500, 500));
+	display_volume = false;
+	drawEverything();
 
 	/* stop the timer */
 	memset(&volumeTimerSpec,0,sizeof(volumeTimerSpec));
@@ -81,40 +221,12 @@ static void wipeVolumeScreen() {
 	}
 }
 
-void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
-	int32_t ret;
-
-	/* clear screen */
-	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
-
-	/* update screen */
-	DFBCHECK(primary->Flip(primary, NULL, 0));
-
-	/* clear screen */
-	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
-
-	radio = 1;
-	drawChannelInfo(program_number, audio_pid, video_pid, teletext);
+void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name) {
+	drawChannelInfo(true, program_number, audio_pid, video_pid, teletext, current_name, next_name);
 }
 
-void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
-	int32_t ret;
-
-	/* clear screen */
-	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
-
-	/* update screen */
-	DFBCHECK(primary->Flip(primary, NULL, 0));
-
-	/* clear screen */
-	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
-	DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
-
-	radio = 0;
-	drawChannelInfo(program_number, audio_pid, video_pid, teletext);
+void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name) {
+	drawChannelInfo(false, program_number, audio_pid, video_pid, teletext, current_name, next_name);
 }
 
 GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
@@ -137,7 +249,7 @@ GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 	/* clear the screen before drawing anything (draw black full screen rectangle)*/
 
 	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xff));
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
+	//DFBCHECK(primary->FillRectangle(primary, screenWidth/3, screenHeight/3, screenWidth/3, screenHeight/3));
 
 	/* create timer */
 	signalEvent.sigev_notify = SIGEV_THREAD; /* tell the OS to notify you about timer by calling the specified function */
@@ -160,113 +272,29 @@ GraphicsControllerError graphicsControllerInit(int argc, char** argv) {
 		printf("Error creating timer, abort!\n");
 		primary->Release(primary);
 		dfbInterface->Release(dfbInterface);
-
+		DFBCHECK(fontInterface->Release(fontInterface));
 		return GC_ERROR;
 	}
 
 	return GC_NO_ERROR;
 }
 
-GraphicsControllerError drawChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext) {
-	int32_t ret;
-	IDirectFBFont *fontInterface = NULL;
-	DFBFontDescription fontDesc;
-	char keycodeString[4];
-
-	/*  draw the frame */
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xAA));
-	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xAA));
-	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16+FRAME_THICKNESS, 2.5 * screenHeight/4+FRAME_THICKNESS, 14 * screenWidth/16-2*FRAME_THICKNESS, 1.3 * screenHeight/4-2*FRAME_THICKNESS));
-
-
-	/* draw keycode */
-
-	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = FONT_HEIGHT;
-
-	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
-	DFBCHECK(primary->SetFont(primary, fontInterface));
-
-	/* generate keycode string */
-	sprintf(keycodeString,"%d",program_number);
-
-	/* draw the string */
-	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
-	if (!radio) {
-		/* video pid */
-		sprintf(keycodeString,"VIDEO PID: %d",video_pid);
-		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-	}
-
-	/* audio pid */
-	sprintf(keycodeString,"AUDIO PID: %d",audio_pid);
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
-	/* teletext */
-	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
-
-	/* update screen */
-	DFBCHECK(primary->Flip(primary, NULL, 0));
-	// REPEAT
-	/*  draw the frame */
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x10, 0xAA));
-	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16, 2.5 * screenHeight/4, 14 * screenWidth/16, 1.3 * screenHeight/4));
-	if (radio) {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xFF));
-	} else {
-		DFBCHECK(primary->SetColor(primary, 0x10, 0x10, 0x10, 0xAA));
-	}
-	DFBCHECK(primary->FillRectangle(primary, screenWidth/16+FRAME_THICKNESS, 2.5 * screenHeight/4+FRAME_THICKNESS, 14 * screenWidth/16-2*FRAME_THICKNESS, 1.3 * screenHeight/4-2*FRAME_THICKNESS));
-
-
-	/* draw keycode */
-
-	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = FONT_HEIGHT;
-
-	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
-	DFBCHECK(primary->SetFont(primary, fontInterface));
-
-	/* generate keycode string */
-	sprintf(keycodeString,"%d",program_number);
-
-	/* draw the string */
-	DFBCHECK(primary->SetColor(primary, 0xff, 0xff, 0xff, 0xff));
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT/2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
-	if (!radio) {
-		/* video pid */
-		sprintf(keycodeString,"VIDEO PID: %d",video_pid);
-		DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 2 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-	}
-
-	/* audio pid */
-	sprintf(keycodeString,"AUDIO PID: %d",audio_pid);
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 3 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
-	/* teletext */
-	sprintf(keycodeString,"TELETEXT: %s", teletext? "YES" : "NO");
-	DFBCHECK(primary->DrawString(primary, keycodeString, -1, screenWidth/16 + 2*FRAME_THICKNESS, 2.5 * screenHeight/4+FONT_HEIGHT * 4 + 4 * FRAME_THICKNESS, DSTF_LEFT));
-
+GraphicsControllerError graphicsControllerDeinit() {
 	DFBCHECK(fontInterface->Release(fontInterface));
-	// END REPEAT
+	DFBCHECK(primary->Release(primary));
+	DFBCHECK(dfbInterface->Release(dfbInterface));
+}
+
+GraphicsControllerError drawChannelInfo(bool is_radio, int16_t program_no, int16_t audio, int16_t video, bool txt, char* current, char* next) {
+	int ret;
+
+	display_info = true;
+	radio = is_radio;
+
+	updateChannelInfo(program_no, audio, video, txt, current, next);
+
+	drawEverything();
+
 	/* set the timer for clearing the screen */
 	memset(&timerSpec,0,sizeof(timerSpec));
 
@@ -284,72 +312,27 @@ GraphicsControllerError drawChannelInfo(int16_t program_number, int16_t audio_pi
 	return GC_NO_ERROR;
 }
 
+GraphicsControllerError updateChannelInfo(int16_t program_no, int16_t audio, int16_t video, bool txt, char* current, char* next) {
+	program_number = program_no;
+	audio_pid = audio;
+	video_pid = video;
+	teletext = txt;
+	strcpy(current_name, current);
+	strcpy(next_name, next);
+
+	drawEverything();
+
+	return GC_NO_ERROR;
+}
+
 GraphicsControllerError drawVolume(uint16_t volume) {
-	int32_t ret;
-	IDirectFBImageProvider *provider;
-	IDirectFBSurface *logoSurface = NULL;
-	int32_t logoHeight, logoWidth;
-	char img_name[50];
-	/* draw image from file */
-	/* get image name */
-	sprintf(img_name, "volume_%u.png", volume);
-	printf("IMG NAME: %s\n", img_name);
-	/* create the image provider for the specified file */
-	DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, img_name, &provider));
-	/* get surface descriptor for the surface where the image will be rendered */
-	DFBCHECK(provider->GetSurfaceDescription(provider, &surfaceDesc));
-	/* create the surface for the image */
-	DFBCHECK(dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &logoSurface));
-	/* render the image to the surface */
-	DFBCHECK(provider->RenderTo(provider, logoSurface, NULL));
+	int ret;
 
+	sound_volume = volume;
+	display_volume = true;
 
-	/* cleanup the provider after rendering the image to the surface */
-	provider->Release(provider);
+	drawEverything();
 
-	/* fetch the logo size and add (blit) it to the screen */
-	DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-	DFBCHECK(primary->Blit(primary,
-						   /*source surface*/ logoSurface,
-						   /*source region, NULL to blit the whole surface*/ NULL,
-						   /*destination x coordinate of the upper left corner of the image*/50,
-						   /*destination y coordinate of the upper left corner of the image*/50));
-
-
-	/* switch between the displayed and the work buffer (update the display) */
-	DFBCHECK(primary->Flip(primary,
-						   /*region to be updated, NULL for the whole surface*/NULL,
-						   /*flip flags*/0));
-	// REPEAT
-   /* get image name */
-	sprintf(img_name, "volume_%u.png", volume);
-	printf("IMG NAME: %s\n", img_name);
-	/* create the image provider for the specified file */
-	DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, img_name, &provider));
-	/* get surface descriptor for the surface where the image will be rendered */
-	DFBCHECK(provider->GetSurfaceDescription(provider, &surfaceDesc));
-	/* create the surface for the image */
-	DFBCHECK(dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &logoSurface));
-	/* render the image to the surface */
-	DFBCHECK(provider->RenderTo(provider, logoSurface, NULL));
-
-
-	/* cleanup the provider after rendering the image to the surface */
-	provider->Release(provider);
-
-	/* fetch the logo size and add (blit) it to the screen */
-	DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-	DFBCHECK(primary->Blit(primary,
-						   /*source surface*/ logoSurface,
-						   /*source region, NULL to blit the whole surface*/ NULL,
-						   /*destination x coordinate of the upper left corner of the image*/50,
-						   /*destination y coordinate of the upper left corner of the image*/50));
-
-
-	//END REPEAT
-
-	/* set the timer for clearing the screen */
-	//DFBCHECK(primary->SetColor(primary, 0x10, 0x80, 0x40, 0x00));
 	memset(&volumeTimerSpec,0,sizeof(timerSpec));
 
 	/* specify the timer timeout time */

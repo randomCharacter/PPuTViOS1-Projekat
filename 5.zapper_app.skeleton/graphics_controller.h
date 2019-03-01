@@ -40,7 +40,8 @@ typedef enum _GraphicsControllerError
  *
  * @return graphics cotroller error code
  */
-GraphicsControllerError graphicsControllerInit();
+GraphicsControllerError graphicsControllerInit(int argc, char** argv);
+GraphicsControllerError graphicsControllerDeinit();
 
 /*
  * @brief Deinitializes graphics controller module
@@ -54,10 +55,10 @@ GraphicsControllerError graphicsControllerDeinit();
  *
  * @return graphics cotroller error code
  */
-GraphicsControllerError drawChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
-
-void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
-void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext);
+GraphicsControllerError drawChannelInfo(bool radio, int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
+GraphicsControllerError updateChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
+void radioScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
+void videoScreen(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
 
 GraphicsControllerError drawVolume(uint16_t volume);
 

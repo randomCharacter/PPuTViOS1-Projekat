@@ -8,7 +8,8 @@
 #define TABLES_MAX_NUMBER_OF_PIDS_IN_PAT    20 	    /* Max number of PMT pids in one PAT table */
 #define TABLES_MAX_NUMBER_OF_ELEMENTARY_PID 20       /* Max number of elementary pids in one PMT table */
 #define TABLES_MAX_NUMBER_OF_EIT_PID 20
-
+#define TABLES_MAX_EVENT_NAME 100
+#define TABLES_MAX_EVENT_DESCRIPTION 1000
 /**
  * @brief Enumeration of possible tables parser error codes
  */
@@ -93,9 +94,9 @@ typedef struct _EitDescriptor
 	uint8_t descriptorTag;
 	uint8_t descriptorLength;
 	uint8_t eventNameLength;
-	char eventNameChar[1000];
+	char eventNameChar[TABLES_MAX_EVENT_NAME];
 	uint8_t descriptionLength;
-	char descriptionChar[1000];
+	char descriptionChar[TABLES_MAX_EVENT_DESCRIPTION];
 }EitDescriptor;
 
 

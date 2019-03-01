@@ -60,7 +60,6 @@ int main(int argc, char **argv)
 	}
 	pthread_mutex_unlock(&deinitMutex);
 
-
 	/* unregister remote controller callback */
 	ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
 
@@ -69,6 +68,8 @@ int main(int argc, char **argv)
 
 	/* deinitialize stream controller module */
 	ERRORCHECK(streamControllerDeinit());
+
+	graphicsControllerDeinit();
 
 	return 0;
 }
@@ -80,7 +81,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 	{
 		case KEYCODE_INFO:
 			getChannelInfo(&channelInfo);
-			drawChannelInfo(channelInfo.programNumber, channelInfo.audioPid, channelInfo.videoPid, channelInfo.teletext);
+			drawChannelInfo(channelInfo.isRadio, channelInfo.programNumber, channelInfo.audioPid, channelInfo.videoPid, channelInfo.teletext, channelInfo.currentInfo, channelInfo.nextInfo);
 			printf("\nInfo pressed\n");
 			if (getChannelInfo(&channelInfo) == SC_NO_ERROR)
 			{

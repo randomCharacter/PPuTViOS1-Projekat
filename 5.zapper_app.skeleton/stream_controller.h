@@ -16,6 +16,8 @@
 #define DESIRED_FREQUENCY 818000000	        /* Tune frequency in Hz */
 #define BANDWIDTH 8    				        /* Bandwidth in Mhz */
 
+#define CHANNEL_INFO_SIZE         100
+
 /**
  * @brief Structure that defines stream controller error
  */
@@ -35,6 +37,9 @@ typedef struct _ChannelInfo
 	int16_t audioPid;
 	int16_t videoPid;
 	bool teletext;
+	char currentInfo[CHANNEL_INFO_SIZE];
+	char nextInfo[CHANNEL_INFO_SIZE];
+	bool isRadio;
 }ChannelInfo;
 
 /**
