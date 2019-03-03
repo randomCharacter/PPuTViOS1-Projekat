@@ -1,3 +1,22 @@
+/****************************************************************************
+*
+* Univerzitet u Novom Sadu, Fakultet tehnickih nauka
+* Katedra za Računarsku Tehniku i Računarske Komunikacije
+*
+* -----------------------------------------------------
+* Ispitni zadatak iz predmeta:
+*
+* PROGRAMSKA PODRSKA U TELEVIZIJI I OBRADI SLIKE
+* -----------------------------------------------------
+* Aplikacija za TV prijemnik
+* -----------------------------------------------------
+*
+* \file volume_controller.c
+* \brief
+* 	This module is used for controlling sound volume.
+*
+* @Author Mario Peric
+*****************************************************************************/
 #include "volume_controller.h"
 
 static uint32_t player = -1;

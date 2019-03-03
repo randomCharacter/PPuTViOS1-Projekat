@@ -1,3 +1,22 @@
+/****************************************************************************
+*
+* Univerzitet u Novom Sadu, Fakultet tehnickih nauka
+* Katedra za Računarsku Tehniku i Računarske Komunikacije
+*
+* -----------------------------------------------------
+* Ispitni zadatak iz predmeta:
+*
+* PROGRAMSKA PODRSKA U TELEVIZIJI I OBRADI SLIKE
+* -----------------------------------------------------
+* Aplikacija za TV prijemnik
+* -----------------------------------------------------
+*
+* \file graphics_controller.c
+* \brief
+* 	This module is used to control on-screen graphics
+*
+* @Author Mario Peric
+*****************************************************************************/
 #include "graphics_controller.h"
 
 static timer_t timer_id;

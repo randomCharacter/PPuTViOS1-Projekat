@@ -33,12 +33,12 @@ CXXFLAGS = $(CFLAGS)
 
 all: parser_playback_sample
 
-SRCS =  ./vezba_5.c
+SRCS =  ./main.c
 SRCS += ./tables_parser.c ./remote_controller.c ./stream_controller.c ./graphics_controller.c ./init_controller.c ./volume_controller.c
 
 parser_playback_sample:
-	$(CC) -o vezba_5 $(INCS) $(SRCS) $(CFLAGS) $(LIBS)
-	cp vezba_5 ../../../ploca
+	$(CC) -o main $(INCS) $(SRCS) $(CFLAGS) $(LIBS)
+	cp main ../../../ploca
 	cp assets/* ../../../ploca
 clean:
-	rm -f vezba_5
+	rm -f main

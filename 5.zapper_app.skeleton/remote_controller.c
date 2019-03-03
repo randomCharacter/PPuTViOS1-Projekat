@@ -1,3 +1,22 @@
+/****************************************************************************
+*
+* Univerzitet u Novom Sadu, Fakultet tehnickih nauka
+* Katedra za Računarsku Tehniku i Računarske Komunikacije
+*
+* -----------------------------------------------------
+* Ispitni zadatak iz predmeta:
+*
+* PROGRAMSKA PODRSKA U TELEVIZIJI I OBRADI SLIKE
+* -----------------------------------------------------
+* Aplikacija za TV prijemnik
+* -----------------------------------------------------
+*
+* \file remote_controller.c
+* \brief
+* 	This module is used to read initial values from a file.
+*
+* @Author Mario Peric
+*****************************************************************************/
 #include "remote_controller.h"
 
 static int32_t input_file_desc;

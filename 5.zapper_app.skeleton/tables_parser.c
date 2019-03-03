@@ -1,3 +1,22 @@
+/****************************************************************************
+*
+* Univerzitet u Novom Sadu, Fakultet tehnickih nauka
+* Katedra za Računarsku Tehniku i Računarske Komunikacije
+*
+* -----------------------------------------------------
+* Ispitni zadatak iz predmeta:
+*
+* PROGRAMSKA PODRSKA U TELEVIZIJI I OBRADI SLIKE
+* -----------------------------------------------------
+* Aplikacija za TV prijemnik
+* -----------------------------------------------------
+*
+* \file tables_parser.c
+* \brief
+* 	This module contains everything needed for parsing PAT/PMT/EIT tables.
+*
+* @Author Mario Peric
+*****************************************************************************/
 #include "tables.h"
 
 ParseErrorCode parsePatHeader(const uint8_t *pat_header_buffer, PatHeader *pat_header)
