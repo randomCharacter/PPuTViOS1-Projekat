@@ -26,7 +26,7 @@ static pthread_t sc_thread;
 static pthread_cond_t demux_cond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t demux_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void* streamControllerTask();
+static void *streamControllerTask();
 static void startChannel(int32_t channel_number);
 
 static uint32_t sc_freq;
@@ -41,7 +41,7 @@ static char next_name[100] = "";
 
 static update;
 
-StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, ChannelT channel, uint16_t program_no)
+StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth, t_Module module, ChannelT channel, uint16_t program_no)
 {
 	if (pthread_create(&sc_thread, NULL, &streamControllerTask, NULL))
 	{
@@ -94,7 +94,7 @@ StreamControllerError streamControllerDeinit()
 	/* free allocated memory */
 	free(pat_table);
 	free(pmt_table);
-    free(eit_table);
+	free(eit_table);
 
 	/* set is_initialized flag */
 	is_initialized = false;
@@ -121,7 +121,8 @@ StreamControllerError channelUp()
 
 StreamControllerError SetChannel(int32_t channel_number)
 {
-	if (channel_number  < pat_table->serviceInfoCount - 1 && channel_number > 1) {
+	if (channel_number < pat_table->serviceInfoCount - 1 && channel_number > 1)
+	{
 		program_number = channel_number - 1;
 		/* set flag to start current channel */
 		change_channel = true;
@@ -147,7 +148,7 @@ StreamControllerError channelDown()
 	return SC_NO_ERROR;
 }
 
-StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
+StreamControllerError getChannelInfo(ChannelInfo *channelInfo)
 {
 	if (channelInfo == NULL)
 	{
@@ -180,7 +181,7 @@ void startChannel(int32_t channel_number)
 	Demux_Free_Filter(player_handle, filter_handle);
 
 	/* set demux filter for receive PMT table of program */
-	if(Demux_Set_Filter(player_handle, pat_table->patServiceInfoArray[channel_number + 1].pid, 0x02, &filter_handle))
+	if (Demux_Set_Filter(player_handle, pat_table->patServiceInfoArray[channel_number + 1].pid, 0x02, &filter_handle))
 	{
 		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
 		return;
@@ -202,20 +203,18 @@ void startChannel(int32_t channel_number)
 	uint8_t i = 0;
 	for (i = 0; i < pmt_table->elementaryInfoCount; i++)
 	{
-		if (((pmt_table->pmtElementaryInfoArray[i].streamType == 0x1) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x2) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x1b))
-			&& (video_pid == -1))
+		if (((pmt_table->pmtElementaryInfoArray[i].streamType == 0x1) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x2) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x1b)) && (video_pid == -1))
 		{
 			video_pid = pmt_table->pmtElementaryInfoArray[i].elementaryPid;
 		}
-		else if (((pmt_table->pmtElementaryInfoArray[i].streamType == 0x3) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x4))
-			&& (audio_pid == -1))
+		else if (((pmt_table->pmtElementaryInfoArray[i].streamType == 0x3) || (pmt_table->pmtElementaryInfoArray[i].streamType == 0x4)) && (audio_pid == -1))
 		{
 			audio_pid = pmt_table->pmtElementaryInfoArray[i].elementaryPid;
 		}
-        if(pmt_table->pmtElementaryInfoArray[i].streamType == 0x6)
-        {
-        	teletext = true;
-        }
+		if (pmt_table->pmtElementaryInfoArray[i].streamType == 0x6)
+		{
+			teletext = true;
+		}
 	}
 
 	if (video_pid != -1)
@@ -228,12 +227,14 @@ void startChannel(int32_t channel_number)
 		}
 
 		/* create video stream */
-		if(Player_Stream_Create(player_handle, source_handle, video_pid, VIDEO_TYPE_MPEG2, &stream_handle_v))
+		if (Player_Stream_Create(player_handle, source_handle, video_pid, VIDEO_TYPE_MPEG2, &stream_handle_v))
 		{
 			printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
 			streamControllerDeinit();
 		}
-	} else {
+	}
+	else
+	{
 		/* remove previous video stream */
 		if (stream_handle_v != 0)
 		{
@@ -252,7 +253,7 @@ void startChannel(int32_t channel_number)
 		}
 
 		/* create audio stream */
-		if(Player_Stream_Create(player_handle, source_handle, audio_pid, AUDIO_TYPE_MPEG_AUDIO, &stream_handle_a))
+		if (Player_Stream_Create(player_handle, source_handle, audio_pid, AUDIO_TYPE_MPEG_AUDIO, &stream_handle_a))
 		{
 			printf("\n%s : ERROR Cannot create audio stream\n", __FUNCTION__);
 			streamControllerDeinit();
@@ -265,13 +266,12 @@ void startChannel(int32_t channel_number)
 	current_channel.videoPid = video_pid;
 	current_channel.teletext = teletext;
 
-
 	/* free EIT table filter*/
 	Demux_Free_Filter(player_handle, filter_handle);
 
 	/*set demux filter for receive EIT table */
 
-	if(Demux_Set_Filter(player_handle, 0x12, 0x4E, &filter_handle))
+	if (Demux_Set_Filter(player_handle, 0x12, 0x4E, &filter_handle))
 	{
 		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
 		return;
@@ -281,115 +281,119 @@ void startChannel(int32_t channel_number)
 	pthread_cond_signal(&demux_cond);
 	pthread_mutex_unlock(&demux_mutex);
 
-	if (video_pid != -1) {
+	if (video_pid != -1)
+	{
 		current_channel.isRadio = false;
 		drawChannelInfo(false, channel_number + 1, audio_pid, video_pid, teletext, current_name, next_name);
-	} else {
+	}
+	else
+	{
 		current_channel.isRadio = true;
 		drawChannelInfo(true, channel_number + 1, audio_pid, video_pid, teletext, current_name, next_name);
 	}
 }
 
-void* streamControllerTask()
+void *streamControllerTask()
 {
-	gettimeofday(&now,NULL);
-	lock_status_wait_time.tv_sec = now.tv_sec+10;
+	gettimeofday(&now, NULL);
+	lock_status_wait_time.tv_sec = now.tv_sec + 10;
 
 	/* allocate memory for PAT table section */
-	pat_table=(PatTable*)malloc(sizeof(PatTable));
-	if(pat_table==NULL)
+	pat_table = (PatTable *)malloc(sizeof(PatTable));
+	if (pat_table == NULL)
 	{
 		printf("\n%s : ERROR Cannot allocate memory\n", __FUNCTION__);
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 	memset(pat_table, 0x0, sizeof(PatTable));
 
 	/* allocate memory for PMT table section */
-	pmt_table=(PmtTable*)malloc(sizeof(PmtTable));
-	if(pmt_table==NULL)
+	pmt_table = (PmtTable *)malloc(sizeof(PmtTable));
+	if (pmt_table == NULL)
 	{
 		printf("\n%s : ERROR Cannot allocate memory\n", __FUNCTION__);
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 	memset(pmt_table, 0x0, sizeof(PmtTable));
 
 	/* allocate memory for PMT table section */
-	eit_table=(EitTable*)malloc(sizeof(EitTable));
-	if(eit_table==NULL)
+	eit_table = (EitTable *)malloc(sizeof(EitTable));
+	if (eit_table == NULL)
 	{
 		printf("\n%s : ERROR Cannot allocate memory\n", __FUNCTION__);
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 	memset(eit_table, 0x0, sizeof(EitTable));
 
 	/* initialize tuner device */
-	if(Tuner_Init())
+	if (Tuner_Init())
 	{
 		printf("\n%s : ERROR Tuner_Init() fail\n", __FUNCTION__);
 		free(pat_table);
 		free(pmt_table);
 		free(eit_table);
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 
 	/* register tuner status callback */
-	if(Tuner_Register_Status_Callback(tunerStatusCallback))
+	if (Tuner_Register_Status_Callback(tunerStatusCallback))
 	{
 		printf("\n%s : ERROR Tuner_Register_Status_Callback() fail\n", __FUNCTION__);
 	}
 
 	/* lock to frequency */
-	if(!Tuner_Lock_To_Frequency(sc_freq, sc_bandwidth, sc_module))
+	if (!Tuner_Lock_To_Frequency(sc_freq, sc_bandwidth, sc_module))
 	{
-		printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n",__FUNCTION__,sc_freq);
+		printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n", __FUNCTION__, sc_freq);
 	}
 	else
 	{
-		printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__,sc_freq);
+		printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n", __FUNCTION__, sc_freq);
 		free(pat_table);
 		free(pmt_table);
 		free(eit_table);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 
 	/* wait for tuner to lock */
 	pthread_mutex_lock(&status_mutex);
-	if(ETIMEDOUT == pthread_cond_timedwait(&status_condition, &status_mutex, &lock_status_wait_time))
+	if (ETIMEDOUT == pthread_cond_timedwait(&status_condition, &status_mutex, &lock_status_wait_time))
 	{
-		printf("\n%s : ERROR Lock timeout exceeded!\n",__FUNCTION__);
+		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
 		free(pat_table);
 		free(pmt_table);
 		free(eit_table);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 	pthread_mutex_unlock(&status_mutex);
 
 	/* initialize player */
-	if(Player_Init(&player_handle))
+	if (Player_Init(&player_handle))
 	{
 		printf("\n%s : ERROR Player_Init() fail\n", __FUNCTION__);
 		free(pat_table);
 		free(pmt_table);
 		free(eit_table);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 
 	/* initialize volume controller */
-	if (volumeControllerInit(player_handle)) {
+	if (volumeControllerInit(player_handle))
+	{
 		printf("\n%s : ERROR volumeControllerInit() fail\n", __FUNCTION__);
 		free(pat_table);
 		free(pmt_table);
 		free(eit_table);
 		Player_Deinit(player_handle);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 
 	/* open source */
-	if(Player_Source_Open(player_handle, &source_handle))
+	if (Player_Source_Open(player_handle, &source_handle))
 	{
 		printf("\n%s : ERROR Player_Source_Open() fail\n", __FUNCTION__);
 		free(pat_table);
@@ -397,17 +401,17 @@ void* streamControllerTask()
 		free(eit_table);
 		Player_Deinit(player_handle);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 
 	/* set PAT pid and tableID to demultiplexer */
-	if(Demux_Set_Filter(player_handle, 0x00, 0x00, &filter_handle))
+	if (Demux_Set_Filter(player_handle, 0x00, 0x00, &filter_handle))
 	{
 		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
 	}
 
 	/* register section filter callback */
-	if(Demux_Register_Section_Filter_Callback(sectionReceivedCallback))
+	if (Demux_Register_Section_Filter_Callback(sectionReceivedCallback))
 	{
 		printf("\n%s : ERROR Demux_Register_Section_Filter_Callback() fail\n", __FUNCTION__);
 	}
@@ -421,7 +425,7 @@ void* streamControllerTask()
 		free(eit_table);
 		Player_Deinit(player_handle);
 		Tuner_Deinit();
-		return (void*) SC_ERROR;
+		return (void *)SC_ERROR;
 	}
 	pthread_mutex_unlock(&demux_mutex);
 
@@ -431,7 +435,7 @@ void* streamControllerTask()
 	/* set is_initialized flag */
 	is_initialized = true;
 
-	while(!thread_exit)
+	while (!thread_exit)
 	{
 		if (change_channel)
 		{
@@ -444,18 +448,18 @@ void* streamControllerTask()
 int32_t sectionReceivedCallback(uint8_t *buffer)
 {
 	uint8_t tableId = *buffer;
-	if(tableId==0x00)
+	if (tableId == 0x00)
 	{
-		if(parsePatTable(buffer,pat_table)==TABLES_PARSE_OK)
+		if (parsePatTable(buffer, pat_table) == TABLES_PARSE_OK)
 		{
 			pthread_mutex_lock(&demux_mutex);
 			pthread_cond_signal(&demux_cond);
 			pthread_mutex_unlock(&demux_mutex);
 		}
 	}
-	else if (tableId==0x02)
+	else if (tableId == 0x02)
 	{
-		if(parsePmtTable(buffer,pmt_table) == TABLES_PARSE_OK)
+		if (parsePmtTable(buffer, pmt_table) == TABLES_PARSE_OK)
 		{
 			pthread_mutex_lock(&demux_mutex);
 			pthread_cond_signal(&demux_cond);
@@ -464,11 +468,13 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	}
 	else if (tableId == 0x4E)
 	{
-		if(parseEitTable(buffer,eit_table) == TABLES_PARSE_OK)
+		if (parseEitTable(buffer, eit_table) == TABLES_PARSE_OK)
 		{
 			int i;
-			if (eit_table->eitHeader.serviceId == pmt_table->pmtHeader.programNumber) {
-				for (i = 0; i < eit_table->eventsInfoCount; i++) {
+			if (eit_table->eitHeader.serviceId == pmt_table->pmtHeader.programNumber)
+			{
+				for (i = 0; i < eit_table->eventsInfoCount; i++)
+				{
 					if (eit_table->eitInfoArray[i].runningStatus == 0x04)
 					{
 						strcpy(current_name, eit_table->eitInfoArray[i].descriptor.eventNameChar);
@@ -481,7 +487,8 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 			}
 			strcpy(current_channel.currentInfo, current_name);
 			strcpy(current_channel.nextInfo, next_name);
-			if (update && strcmp(next_name, "") && strcmp(current_name, "")) {
+			if (update && strcmp(next_name, "") && strcmp(current_name, ""))
+			{
 				updateChannelInfo(current_channel.programNumber, current_channel.audioPid, current_channel.videoPid, current_channel.teletext, current_channel.currentInfo, current_channel.nextInfo);
 				update = false;
 			}
@@ -492,16 +499,16 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 
 int32_t tunerStatusCallback(t_LockStatus status)
 {
-	if(status == STATUS_LOCKED)
+	if (status == STATUS_LOCKED)
 	{
 		pthread_mutex_lock(&status_mutex);
 		pthread_cond_signal(&status_condition);
 		pthread_mutex_unlock(&status_mutex);
-		printf("\n%s -----TUNER LOCKED-----\n",__FUNCTION__);
+		printf("\n%s -----TUNER LOCKED-----\n", __FUNCTION__);
 	}
 	else
 	{
-		printf("\n%s -----TUNER NOT LOCKED-----\n",__FUNCTION__);
+		printf("\n%s -----TUNER NOT LOCKED-----\n", __FUNCTION__);
 	}
 	return 0;
 }

@@ -4,10 +4,12 @@ static uint32_t player = -1;
 static uint16_t volume_level = 0;
 static uint8_t muted = 0;
 
-VolumeControllerError volumeControllerInit(uint32_t playerHandle) {
+VolumeControllerError volumeControllerInit(uint32_t playerHandle)
+{
 	player = playerHandle;
 	muted = 0;
-	if (Player_Volume_Set(player, INIT_VOLUME * VOLUME_LEVEL)) {
+	if (Player_Volume_Set(player, INIT_VOLUME * VOLUME_LEVEL))
+	{
 		return VC_ERROR;
 	}
 
@@ -16,14 +18,19 @@ VolumeControllerError volumeControllerInit(uint32_t playerHandle) {
 	return VC_NO_ERROR;
 }
 
-VolumeControllerError volumeUp() {
+VolumeControllerError volumeUp()
+{
 	muted = 0;
-	if (volume_level < 10) {
+	if (volume_level < 10)
+	{
 		volume_level++;
-	} else {
+	}
+	else
+	{
 		volume_level = 10;
 	}
-	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL)) {
+	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL))
+	{
 		return VC_ERROR;
 	}
 
@@ -34,14 +41,19 @@ VolumeControllerError volumeUp() {
 	return VC_NO_ERROR;
 }
 
-VolumeControllerError volumeDown() {
+VolumeControllerError volumeDown()
+{
 	muted = 0;
-	if (volume_level > 0) {
+	if (volume_level > 0)
+	{
 		volume_level--;
-	} else {
+	}
+	else
+	{
 		volume_level = 0;
 	}
-	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL)) {
+	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL))
+	{
 		return VC_ERROR;
 	}
 
@@ -52,16 +64,19 @@ VolumeControllerError volumeDown() {
 	return VC_NO_ERROR;
 }
 
-VolumeControllerError getVolume(uint16_t *vol) {
+VolumeControllerError getVolume(uint16_t *vol)
+{
 	*vol = volume_level * !muted;
 
 	return VC_NO_ERROR;
 }
 
-VolumeControllerError muteVolume() {
+VolumeControllerError muteVolume()
+{
 	muted = !muted;
 
-	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL)) {
+	if (Player_Volume_Set(player, !muted * volume_level * VOLUME_LEVEL))
+	{
 		return VC_ERROR;
 	}
 

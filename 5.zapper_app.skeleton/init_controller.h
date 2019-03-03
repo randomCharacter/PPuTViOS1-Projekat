@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include "tdp_api.h"
 
-
 #define INIT_FILE_NAME "config.txt"
 #define INIT_KEY_SIZE 51
 
@@ -18,13 +17,20 @@
 #define KEY_VIDEO_TYPE "channel_video_type:"
 #define KEY_AUDIO_TYPE "channel_audio_type:"
 
-typedef struct channel_st {
+/**
+ * @brief Structure that defines init channel info
+ */
+typedef struct channel_st
+{
 	uint16_t video_pid;
 	uint16_t audio_pid;
 	tStreamType video_type;
 	tStreamType audio_type;
 } ChannelT;
 
+/**
+ * @brief Structure that defines init controller error
+ */
 typedef enum _InitControllerError
 {
 	IC_NO_ERROR = 0,
@@ -32,7 +38,18 @@ typedef enum _InitControllerError
 	IC_PARSE_ERROR
 } InitControllerError;
 
-
+/**
+ * @brief Reads init values from file
+ *
+ * @param  [in] file_name - path to file
+ * @param  [out] freq - channel frequency
+ * @param  [out] bandwidth - bandwidth
+ * @param  [out] module - inital module
+ * @param  [out] channel - initial channel values
+ * @param  [out] program_no - initial program number
+ *
+ * @return init controller error code
+ */
 InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *bandwidth, t_Module *module, ChannelT *channel, uint16_t *program_no);
 
 #endif //__INIT_CONTROLLER_H__

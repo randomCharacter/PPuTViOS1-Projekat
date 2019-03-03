@@ -17,13 +17,15 @@
 #define FONT_HEIGHT 40
 
 /* helper macro for error checking */
-#define DFBCHECK(x...) { \
-	DFBResult err = x; \
-	if (err != DFB_OK) {  \
-		fprintf( stderr, "%s <%d>:\n\t", __FILE__, __LINE__ ); \
-		DirectFBErrorFatal( #x, err ); \
-	}  \
-}
+#define DFBCHECK(x...)                                           \
+	{                                                            \
+		DFBResult err = x;                                       \
+		if (err != DFB_OK)                                       \
+		{                                                        \
+			fprintf(stderr, "%s <%d>:\n\t", __FILE__, __LINE__); \
+			DirectFBErrorFatal(#x, err);                         \
+		}                                                        \
+	}
 
 /**
  * @brief Structure that defines graphics controller error
@@ -35,29 +37,56 @@ typedef enum _GraphicsControllerError
 	GC_THREAD_ERROR
 } GraphicsControllerError;
 
-/*
+/**
  * @brief Initializes graphics controller module
  *
  * @return graphics cotroller error code
  */
-GraphicsControllerError graphicsControllerInit(int argc, char** argv);
-GraphicsControllerError graphicsControllerDeinit();
+GraphicsControllerError graphicsControllerInit(int argc, char **argv);
 
-/*
+/**
  * @brief Deinitializes graphics controller module
  *
  * @return graphics cotroller error code
  */
 GraphicsControllerError graphicsControllerDeinit();
 
-/*
- * @brief Draw channel number
+/**
+ * @brief Draw channel info
+ *
+ * @param  [in] radio - true if program is radio program
+ * @param  [in] program_number - current program number
+ * @param  [in] audio_pid - audio PID
+ * @param  [in] video pid - video PID
+ * @param  [in] teletext - true if program supports teletext
+ * @param  [in] current_name - name of the current event
+ * @param  [in] next_name - name of the next event
  *
  * @return graphics cotroller error code
  */
-GraphicsControllerError drawChannelInfo(bool radio, int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
-GraphicsControllerError updateChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char* current_name, char* next_name);
+GraphicsControllerError drawChannelInfo(bool radio, int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char *current_name, char *next_name);
 
+/**
+ * @brief Updates channel info
+ *
+ * @param  [in] program_number - current program number
+ * @param  [in] audio_pid - audio PID
+ * @param  [in] video pid - video PID
+ * @param  [in] teletext - true if program supports teletext
+ * @param  [in] current_name - name of the current event
+ * @param  [in] next_name - name of the next event
+ *
+ * @return graphics cotroller error code
+ */
+GraphicsControllerError updateChannelInfo(int16_t program_number, int16_t audio_pid, int16_t video_pid, bool teletext, char *current_name, char *next_name);
+
+/**
+ * @brief Draws volume level
+ *
+ * @param  [in] volume - volume level
+ *
+ * @return graphics cotroller error code
+ */
 GraphicsControllerError drawVolume(uint16_t volume);
 
 #endif /* __REMOTE_CONTROLLER_H__ */

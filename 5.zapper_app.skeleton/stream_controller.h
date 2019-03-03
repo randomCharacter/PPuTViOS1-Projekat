@@ -13,10 +13,10 @@
 #include "init_controller.h"
 #include "volume_controller.h"
 
-#define DESIRED_FREQUENCY 818000000	        /* Tune frequency in Hz */
-#define BANDWIDTH 8    				        /* Bandwidth in Mhz */
+#define DESIRED_FREQUENCY 818000000 /* Tune frequency in Hz */
+#define BANDWIDTH 8					/* Bandwidth in Mhz */
 
-#define CHANNEL_INFO_SIZE         100
+#define CHANNEL_INFO_SIZE 100
 
 /**
  * @brief Structure that defines stream controller error
@@ -26,7 +26,7 @@ typedef enum _StreamControllerError
 	SC_NO_ERROR = 0,
 	SC_ERROR,
 	SC_THREAD_ERROR
-}StreamControllerError;
+} StreamControllerError;
 
 /**
  * @brief Structure that defines channel info
@@ -40,14 +40,20 @@ typedef struct _ChannelInfo
 	char currentInfo[CHANNEL_INFO_SIZE];
 	char nextInfo[CHANNEL_INFO_SIZE];
 	bool isRadio;
-}ChannelInfo;
+} ChannelInfo;
 
 /**
  * @brief Initializes stream controller module
  *
+ * param [in] freq - channel frequency
+ * param [in] bandwidth - bandwidth
+ * param [in] module - module type
+ * param [in] channel - channel info
+ * param [in] program_no - program number
+ *
  * @return stream controller error code
  */
-StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth,  t_Module module, ChannelT channel, uint16_t program_no);
+StreamControllerError streamControllerInit(uint32_t freq, uint32_t bandwidth, t_Module module, ChannelT channel, uint16_t program_no);
 
 /**
  * @brief Deinitializes stream controller module
@@ -73,11 +79,18 @@ StreamControllerError channelDown();
 /**
  * @brief Returns current channel info
  *
- * @param [out] channelInfo - channel info structure with current channel info
+ * @param [out] channel_info - channel info structure with current channel info
  * @return stream controller error code
  */
-StreamControllerError getChannelInfo(ChannelInfo* channel_info);
+StreamControllerError getChannelInfo(ChannelInfo *channel_info);
 
+/**
+ * @brief Sets channel to channel_number
+ *
+ * @param [in] channel_number - new channel number
+ *
+ * @return stream controller error code
+ */
 StreamControllerError SetChannel(int32_t channel_number);
 
 #endif /* __STREAM_CONTROLLER_H__ */
