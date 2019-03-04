@@ -57,7 +57,17 @@ int main(int argc, char **argv)
 	ChannelT channel;
 	uint16_t program_no;
 
-	ERRORCHECK(read_init_values(INIT_FILE_NAME, &freq, &bandwidth, &module, &channel, &program_no));
+	if (argc < 2)
+	{
+		printf("Usage: %s path/to/input\n", argv[0]);
+		return -1;
+	}
+
+	if (read_init_values(argv[1], &freq, &bandwidth, &module, &channel, &program_no))
+	{
+		printf("Error reading inital values from %s\n", argv[1]);
+		return -2;
+	}
 
 	/* initialize remote controller module */
 	ERRORCHECK(remoteControllerInit());
