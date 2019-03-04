@@ -200,8 +200,46 @@ static GraphicsControllerError clearSoundVolume()
 
 static GraphicsControllerError drawRadioScreen()
 {
+	int32_t ret;
 	DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
 	DFBCHECK(primary->FillRectangle(primary, 0, 0, screen_width, screen_height));
+
+	IDirectFBSurface *logo_surface = NULL;
+	int32_t logo_height, logo_width;
+
+	/* create the image provider for the specified file */
+	DFBCHECK(dfb_interface->CreateImageProvider(dfb_interface, "radio.png", &provider));
+
+	/* get surface descriptor for the surface where the image will be rendered */
+	DFBCHECK(provider->GetSurfaceDescription(provider, &surface_desc));
+
+	/* create the surface for the image */
+	DFBCHECK(dfb_interface->CreateSurface(dfb_interface, &surface_desc, &logo_surface));
+
+	/* render the image to the surface */
+	if (logo_surface)
+	{
+		DFBCHECK(provider->RenderTo(provider, logo_surface, NULL));
+	}
+
+	/* fetch the logo size and add (blit) it to the screen */
+	DFBCHECK(logo_surface->GetSize(logo_surface, &logo_width, &logo_height));
+	DFBCHECK(primary->Blit(primary,
+						   /*source surface*/ logo_surface,
+						   /*source region, NULL to blit the whole surface*/ NULL,
+						   /*destination x coordinate of the upper left corner of the image*/ (screen_width - logo_width) / 2,
+						   /*destination y coordinate of the upper left corner of the image*/ (screen_height - logo_height) / 2));
+
+	if (provider != NULL)
+	{
+		provider->Release(provider);
+	}
+	if (logo_surface != NULL)
+	{
+		logo_surface->Release(logo_surface);
+	}
+
+	return GC_NO_ERROR;
 
 	return GC_NO_ERROR;
 }
