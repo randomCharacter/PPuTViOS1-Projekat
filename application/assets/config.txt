@@ -2,7 +2,7 @@ freq: 818000000
 bandwidth: 8
 module: DVB_T
 program: 0
-channel_video_pid: 0
-channel_audio_pid: 0
-channel_video_type: 0
-channel_audio_type: 0
+channel_video_pid: 101
+channel_audio_pid: 103
+channel_video_type: 42
+channel_audio_type: 10

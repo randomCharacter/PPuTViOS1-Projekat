@@ -41,10 +41,10 @@
  */
 typedef struct channel_st
 {
-	uint16_t video_pid;
-	uint16_t audio_pid;
-	tStreamType video_type;
-	tStreamType audio_type;
+	uint16_t videoPid;
+	uint16_t audioPid;
+	tStreamType videoType;
+	tStreamType audioType;
 } ChannelT;
 
 /**

@@ -65,19 +65,19 @@ InitControllerError read_init_values(char *file_name, uint32_t *freq, uint32_t *
 		}
 		else if (!strcmp(key, KEY_VIDEO_PID))
 		{
-			channel->video_pid = atoi(value);
+			channel->videoPid = atoi(value);
 		}
 		else if (!strcmp(key, KEY_AUDIO_PID))
 		{
-			channel->audio_pid = atoi(value);
+			channel->audioPid = atoi(value);
 		}
 		else if (!strcmp(key, KEY_VIDEO_TYPE))
 		{
-			channel->video_type = atoi(value);
+			channel->videoType = atoi(value);
 		}
 		else if (!strcmp(key, KEY_AUDIO_TYPE))
 		{
-			channel->audio_type = atoi(value);
+			channel->audioType = atoi(value);
 		}
 		else
 		{

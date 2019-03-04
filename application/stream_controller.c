@@ -312,6 +312,113 @@ void startChannel(int32_t channel_number)
 	}
 }
 
+static void startInitChannel(ChannelT channel, int32_t channel_number)
+{
+	strcpy(current_name, "");
+	strcpy(next_name, "");
+	update = true;
+
+	/* free PAT table filter */
+	Demux_Free_Filter(player_handle, filter_handle);
+
+	/* set demux filter for receive PMT table of program */
+	if (Demux_Set_Filter(player_handle, pat_table->patServiceInfoArray[channel_number + 1].pid, 0x02, &filter_handle))
+	{
+		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
+		return;
+	}
+
+	/* wait for a PMT table to be parsed*/
+	pthread_mutex_lock(&demux_mutex);
+	if (ETIMEDOUT == pthread_cond_wait(&demux_cond, &demux_mutex))
+	{
+		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
+		streamControllerDeinit();
+	}
+	pthread_mutex_unlock(&demux_mutex);
+
+	/* get audio and video pids */
+	int16_t audio_pid = channel.audioPid;
+	int16_t video_pid = channel.videoPid;
+	bool teletext = false;
+	uint8_t i = 0;
+
+	if (video_pid != -1)
+	{
+		/* remove previous video stream */
+		if (stream_handle_v != 0)
+		{
+			Player_Stream_Remove(player_handle, source_handle, stream_handle_v);
+			stream_handle_v = 0;
+		}
+
+		/* create video stream */
+		if (Player_Stream_Create(player_handle, source_handle, video_pid, channel.videoType, &stream_handle_v))
+		{
+			printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
+			streamControllerDeinit();
+		}
+	}
+	else
+	{
+		/* remove previous video stream */
+		if (stream_handle_v != 0)
+		{
+			Player_Stream_Remove(player_handle, source_handle, stream_handle_v);
+			stream_handle_v = 0;
+		}
+	}
+
+	if (audio_pid != -1)
+	{
+		/* remove previos audio stream */
+		if (stream_handle_a != 0)
+		{
+			Player_Stream_Remove(player_handle, source_handle, stream_handle_a);
+			stream_handle_a = 0;
+		}
+
+		/* create audio stream */
+		if (Player_Stream_Create(player_handle, source_handle, audio_pid, channel.audioType, &stream_handle_a))
+		{
+			printf("\n%s : ERROR Cannot create audio stream\n", __FUNCTION__);
+			streamControllerDeinit();
+		}
+	}
+
+	/* store current channel info */
+	current_channel.programNumber = channel_number + 1;
+	current_channel.audioPid = audio_pid;
+	current_channel.videoPid = video_pid;
+	current_channel.teletext = teletext;
+
+	/* free EIT table filter*/
+	Demux_Free_Filter(player_handle, filter_handle);
+
+	/*set demux filter for receive EIT table */
+
+	if (Demux_Set_Filter(player_handle, 0x12, 0x4E, &filter_handle))
+	{
+		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
+		return;
+	}
+
+	pthread_mutex_lock(&demux_mutex);
+	pthread_cond_signal(&demux_cond);
+	pthread_mutex_unlock(&demux_mutex);
+
+	if (video_pid != -1)
+	{
+		current_channel.isRadio = false;
+		drawChannelInfo(false, channel_number + 1, audio_pid, video_pid, teletext, current_name, next_name);
+	}
+	else
+	{
+		current_channel.isRadio = true;
+		drawChannelInfo(true, channel_number + 1, audio_pid, video_pid, teletext, current_name, next_name);
+	}
+}
+
 void *streamControllerTask()
 {
 	gettimeofday(&now, NULL);
@@ -448,8 +555,8 @@ void *streamControllerTask()
 	}
 	pthread_mutex_unlock(&demux_mutex);
 
-	/* start current channel */
-	startChannel(program_number);
+	/* start initial channel */
+	startInitChannel(sc_channel, sc_program_no);
 
 	/* set is_initialized flag */
 	is_initialized = true;
