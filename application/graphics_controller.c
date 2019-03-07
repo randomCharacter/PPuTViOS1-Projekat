@@ -22,7 +22,7 @@
 static timer_t timer_id;
 static timer_t volume_timer_id;
 static IDirectFBSurface *primary = NULL;
-IDirectFB *dfb_interface = NULL;
+static IDirectFB *dfb_interface = NULL;
 static int32_t screen_width = 0;
 static int32_t screen_height = 0;
 
@@ -41,9 +41,9 @@ struct sigevent volume_signal_event;
 static bool draw = false;
 static uint8_t thread_exit = 0;
 
-IDirectFBFont *font_interface = NULL;
-DFBFontDescription font_desc;
-IDirectFBImageProvider *provider = NULL;
+static IDirectFBFont *font_interface = NULL;
+static DFBFontDescription font_desc;
+static IDirectFBImageProvider *provider = NULL;
 
 // Displaying data
 static uint16_t sound_volume = 0;
