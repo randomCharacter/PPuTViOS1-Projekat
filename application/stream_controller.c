@@ -140,11 +140,13 @@ StreamControllerError channelUp()
 
 StreamControllerError SetChannel(int32_t channel_number)
 {
-	if (channel_number < pat_table->serviceInfoCount - 1 && channel_number > 1)
+	if (channel_number < pat_table->serviceInfoCount && channel_number > 0)
 	{
-		program_number = channel_number - 1;
-		/* set flag to start current channel */
-		change_channel = true;
+		if (program_number != channel_number - 1) {
+			program_number = channel_number - 1;
+			/* set flag to start current channel */
+			change_channel = true;
+		}
 	}
 
 	return SC_NO_ERROR;
